@@ -32,7 +32,9 @@ jobs:
           sudo apt-get install -y jq yq
 
       - name: Install GitHub CLI (gh)
-        uses: actions/setup-gh@v2
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
 
       - name: Set up Node.js (if needed)
         uses: actions/setup-node@v3
