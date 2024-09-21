@@ -118,14 +118,14 @@ jobs:
           echo "User prompt file path: $USER_PROMPT_FILE"
 
           if [ -f "$SYSTEM_PROMPT_FILE" ]; then
-            cat "$SYSTEM_PROMPT_FILE" > system_prompt.txt
+            cat "common-repo/$SYSTEM_PROMPT_FILE" > system_prompt.txt
           else
             echo "System prompt file not found: $SYSTEM_PROMPT_FILE"
             exit 1
           fi
 
           if [ -f "$USER_PROMPT_FILE" ]; then
-            cat "$USER_PROMPT_FILE" > user_prompt.txt
+            cat "common-repo/$USER_PROMPT_FILE" > user_prompt.txt
           else
             echo "User prompt file not found: $USER_PROMPT_FILE"
             exit 1
