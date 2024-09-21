@@ -1,45 +1,41 @@
 const fs = require('fs');
-const readline = require('readline');
+const path = require('path');
 
-async function parseDiff(filePath) {
-    const diffStream = fs.createReadStream(filePath);
-    const rl = readline.createInterface({
-        input: diffStream,
-        crlfDelay: Infinity
+// Function to parse the diff file
+function parseDiffFile(filePath) {
+    const data = fs.readFileSync(filePath, 'utf-8');
+    const changes = [];
+    let currentFile = '';
+    let currentLine = 0;
+
+    data.split('\n').forEach(line => {
+        if (line.startsWith('+++ ')) {
+            currentFile = line.split(' ')[1]; // Get the file name from the diff
+        } else if (line.startsWith('@@')) {
+            const match = line.match(/@@ -\d+,\d+ \+(\d+),\d+ @@/);
+            if (match) {
+                currentLine = parseInt(match[1], 10); // Start line number for changes
+            }
+        } else if (line.startsWith('+') && !line.startsWith('++')) {
+            // This line is added code
+            changes.push({
+                file: currentFile,
+                line: currentLine,
+                code: line.substring(1) // Remove the leading '+'
+            });
+            currentLine++; // Increment the line number for next change
+        }
     });
 
-    let fileName = null;
-    let lineNumber = null;
-    const changes = [];
-
-    for await (const line of rl) {
-        // Match file name (e.g., "+++ b/file_name")
-        const fileMatch = line.match(/^\+\+\+ (.+)/);
-        if (fileMatch) {
-            fileName = fileMatch[1];
-            continue;
-        }
-
-        // Match line number block (e.g., "@@ -1,3 +1,9 @@")
-        const lineMatch = line.match(/^@@ -\d+,\d+ \+(\d+)/);
-        if (lineMatch) {
-            lineNumber = parseInt(lineMatch[1], 10);
-            continue;
-        }
-
-        // Match added lines (e.g., lines starting with '+')
-        if (line.startsWith('+') && !line.startsWith('+++')) {
-            const changedCode = line.slice(1).trim();
-            changes.push({
-                file: fileName,
-                line: lineNumber,
-                code: changedCode
-            });
-            lineNumber++;
-        }
-    }
     return changes;
 }
 
-// Export the function
-module.exports = { parseDiff };
+// Main execution
+function main() {
+    const diffFilePath = path.join(__dirname, '../diff.txt'); // Adjust this if needed
+    const parsedResults = parseDiffFile(diffFilePath);
+    console.log(JSON.stringify(parsedResults, null, 2)); // Output JSON
+}
+
+// Call the main function to execute
+main();
