@@ -112,6 +112,8 @@ jobs:
         id: capture_report
         run: |
           if [ -f eslint_report.txt ]; then
+            echo "logging eslint output => "
+            cat eslint_report.txt
             LINT_OUTPUT=$(cat eslint_report.txt)
           elif [ -f pylint_report.txt ]; then
             LINT_OUTPUT=$(cat pylint_report.txt)
@@ -121,6 +123,8 @@ jobs:
             LINT_OUTPUT="No linting errors found in the changed files."
           fi
           echo "$LINT_OUTPUT" > lint_report.txt
+          echo "logging lint output => "
+          cat lint_report.txt
 
   post_lint_comment:
     needs: lint
