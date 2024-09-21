@@ -62,7 +62,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
+
+      - name: Install Yarn
+        run: |
+          npm install -g yarn
 
       - name: Fetch base branch
         run: |
@@ -80,12 +84,12 @@ jobs:
           echo "Changed files: ${{ steps.get_file_changes.outputs.files }}"
 
       - name: Run Linting for JavaScript/TypeScript (ESLint)
-        if: needs.detect_language.outputs.lang == 'nodejs'  # Use output from the previous job
+        if: needs.detect_language.outputs.lang == 'nodejs'
         run: |
-          npm install
+          yarn install
           echo "logging changed files.."
           echo "${{ steps.get_file_changes.outputs.files }}"
-          npx eslint ${{ steps.get_file_changes.outputs.files }} > eslint_report.txt || true
+          yarn eslint ${{ steps.get_file_changes.outputs.files }} > eslint_report.txt || true
           echo "logging eslint report.."
           cat eslint_report.txt
         continue-on-error: true
