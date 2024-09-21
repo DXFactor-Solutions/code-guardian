@@ -64,13 +64,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Get Changed Files
-        id: get_changed_files
-        run: |
-          git fetch origin ${{ github.event.pull_request.base.ref }}
-          CHANGED_FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD)
-          echo "$CHANGED_FILES" > changed_files.txt
-
       - name: Fetch base branch
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}
