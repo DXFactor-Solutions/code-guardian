@@ -167,14 +167,16 @@ jobs:
           # Read the parsed diff JSON file
           changes=$(cat parsed_diff.json)
 
-          # Check if the file is empty
-          if [ -z "$changes" ]; then
-            echo "Error: parsed_diff.json is empty."
+          # Print the content for debugging
+          echo "Content of parsed_diff.json:"
+          echo "$changes"
+
+          # Check if the JSON is valid
+          echo "$changes" | jq . >/dev/null 2>&1
+          if [ $? -ne 0 ]; then
+            echo "Error: parsed_diff.json is not valid JSON."
             exit 1
           fi
-
-          # Print the changes to debug
-          echo "$changes"
 
           # Loop through each change and send it to OpenAI
           for change in $(echo "${changes}" | jq -c '.[]'); do
