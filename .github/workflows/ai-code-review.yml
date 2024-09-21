@@ -154,15 +154,22 @@ jobs:
           SYSTEM_PROMPT=$(cat system_prompt.txt)
           USER_PROMPT=$(cat user_prompt.txt)
 
+          # Escape DIFF to ensure it's valid JSON
           escaped_code=$(echo "$DIFF" | jq -s -R -r @json)
+          # Escape SYSTEM_PROMPT and USER_PROMPT to ensure they're valid JSON
+          escaped_system_prompt=$(echo "$SYSTEM_PROMPT" | jq -s -R -r @json)
+          escaped_user_prompt=$(echo "$USER_PROMPT" | jq -s -R -r @json)
+
           echo "Escaped code for request: $escaped_code"
 
+          # Construct the JSON payload with escaped content
           request_payload="{
-              \"messages\": [
-                { \"role\": \"system\", \"content\": "$SYSTEM_PROMPT" },
-                { \"role\": \"user\", \"content\": $escaped_code }
-              ]
-            }"
+            \"messages\": [
+              { \"role\": \"system\", \"content\": $escaped_system_prompt },
+              { \"role\": \"user\", \"content\": $escaped_code }
+            ]
+          }"
+
           echo "request_payload: $request_payload"
 
           RESPONSE=$(curl -s -X POST https://code-guardians.openai.azure.com/openai/deployments/code-guardians-gpt-4o/chat/completions?api-version=2024-06-01 \
