@@ -184,11 +184,13 @@ jobs:
             exit 1
           fi
 
-          echo "response=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')" >> $GITHUB_ENV
+          # Save the suggestions to a file
+          echo "$RESPONSE" > code_suggestions.txt
 
       - name: Add AI Comments to PR
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RESPONSE="${{ env.response }}"
+          RESPONSE=$(cat code_suggestions.txt)
+
           gh pr comment ${{ github.event.pull_request.number }} --body "$RESPONSE"
