@@ -154,7 +154,7 @@ jobs:
       - name: Process Diff File and Extract Changes
         id: process_diff
         run: |
-          node parseDiff.js > parsed_diff.json
+          node common-repo/scripts/parseDiff.js > parsed_diff.json
 
       - name: Send Line-by-Line Review Request to Azure OpenAI
         id: ai_review
