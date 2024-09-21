@@ -131,17 +131,19 @@ jobs:
             exit 1
           fi
 
-      - name: Fetch all branches
-        run: git fetch --all
+      - name: Fetch base branch
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
 
       - name: Get PR Diff
-        uses: GrantBirki/git-diff-action@v2.4.0  # GitHub Action for gathering the git diff
+        uses: GrantBirki/git-diff-action@v2.4.0
         id: git-diff
         with:
-          diff_relative: "true" # Ensures diff is relative to the current branch
-          base: origin/${{ github.event.pull_request.base.ref }} # The base branch to compare against
+          base_branch: ${{ github.event.pull_request.base.ref }} # Use the base branch from the PR
           raw_diff_file_output: diff.txt
-          file_output_only: "true"  # Excludes printing the diff to the console for security
+          file_output_only: "true"  # Exclude printing the diff to the console for security
+          search_path: "."          # Specify the search path for the diff (default is current directory)
+          max_buffer_size: 10000000  # Adjust buffer size to handle large diffs
 
       - name: Send Azure OpenAI API Request for Code Review
         id: ai_review
