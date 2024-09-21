@@ -62,28 +62,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Fetch base branch
-        run: |
-          git fetch origin ${{ github.event.pull_request.base.ref }}
-
-      - name: Get changed files
-        id: changed-files
-        run: |
-            if ${{ github.event_name == 'pull_request' }}; then
-                echo "changed_files=$(git diff --name-only -r HEAD^1 HEAD | xargs)" >> $GITHUB_OUTPUT
-            else
-                echo "changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | xargs)" >> $GITHUB_OUTPUT
-            fi
-      - name: List changed files
-        run: |
-            for file in ${{ steps.changed-files.outputs.changed_files }}; do
-                echo "$file was changed"
-            done
-
-      - name: Get All Changed Files
+      - name: Get Changed Files from PR
         id: get_changed_files
         run: |
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}..HEAD > changed_files.txt
+          # Get the pull request number and base ref from the environment
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          BASE_REF=${{ github.event.pull_request.base.ref }}
+
+          # Fetch the base branch
+          git fetch origin $BASE_REF
+
+          # Get the changed files
+          git diff --name-only origin/$BASE_REF...HEAD > changed_files.txt
           echo "changed_files=$(cat changed_files.txt)" >> $GITHUB_ENV
 
       - name: Run Linting for JavaScript/TypeScript (ESLint)
