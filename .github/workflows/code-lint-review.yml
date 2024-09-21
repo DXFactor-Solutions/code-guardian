@@ -66,51 +66,36 @@ jobs:
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}
 
-      # - name: Get Changed Files from PR
-      #   id: get_changed_files
-      #   run: |
-      #     BASE_REF="origin/${{ github.event.pull_request.base.ref }}"
-      #     # Check if the base branch exists
-      #     if git branch -r | grep -q "$BASE_REF"; then
-      #       # Get changed files if the base branch exists
-      #       echo "git diff --name-only $BASE_REF...HEAD"
-      #       git diff --name-only $BASE_REF...HEAD > changed_files.txt
-      #       echo "changed_files=$(cat changed_files.txt)" >> $GITHUB_ENV
-      #     else
-      #       echo "Base branch $BASE_REF does not exist."
-      #       exit 1
-      #     fi
-
-      - name: Get file changes
+     - name: Get file changes
         id: get_file_changes
         uses: dorner/file-changes-action@v1.2.0
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           plaintext: true
+
       - name: Echo file changes
         run: |
-          echo Changed files: ${{ steps.get_file_changes.outputs.files }}
-          ${{ steps.get_file_changes.outputs.files }} > changed_files.txt
+          echo "Changed files: ${{ steps.get_file_changes.outputs.files }}"
 
       - name: Run Linting for JavaScript/TypeScript (ESLint)
         if: env.lang == 'nodejs'
         run: |
           npm install
-          npx eslint $(cat changed_files.txt) > eslint_report.txt || true
+          npx eslint ${{ steps.get_file_changes.outputs.files }} > eslint_report.txt || true
         continue-on-error: true
 
       - name: Run Linting for Python (Pylint)
         if: env.lang == 'python'
         run: |
           pip install pylint
-          pylint $(cat changed_files.txt) > pylint_report.txt || true
+          pylint ${{ steps.get_file_changes.outputs.files }} > pylint_report.txt || true
         continue-on-error: true
 
       - name: Run Linting for Ruby (Rubocop)
         if: env.lang == 'ruby'
         run: |
           gem install rubocop
-          rubocop $(cat changed_files.txt) > rubocop_report.txt || true
+          rubocop ${{ steps.get_file_changes.outputs.files }} > rubocop_report.txt || true
         continue-on-error: true
 
       - name: Capture Lint Report
