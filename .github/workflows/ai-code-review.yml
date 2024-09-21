@@ -46,7 +46,7 @@ jobs:
       - name: Parse Config File
         id: config
         run: |
-          echo "content=$(cat config/config.yaml | base64)" >> $GITHUB_ENV
+          echo "content=$(cat config/config.yaml | base64 -w 0)" >> $GITHUB_ENV
 
       - name: Decode Config
         run: |
@@ -59,6 +59,7 @@ jobs:
             echo "lang=nodejs" >> $GITHUB_ENV
           else
             echo "lang=unknown" >> $GITHUB_ENV
+          fi
 
       - name: Fail if Language Not Supported
         if: env.lang == 'unknown'
