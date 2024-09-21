@@ -71,35 +71,39 @@ jobs:
           CHANGED_FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD)
           echo "$CHANGED_FILES" > changed_files.txt
 
-      - name: Read Changed Files into Env Var
+      - name: Fetch base branch
         run: |
-          if [ -f changed_files.txt ]; then
-            CHANGED_FILES_CONTENT=$(cat changed_files.txt)
-            echo "changed_files_content=$CHANGED_FILES_CONTENT" >> $GITHUB_ENV
-          else
-            echo "No changed files found."
-            exit 1
-          fi
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+
+      - name: Get PR Diff
+        uses: GrantBirki/git-diff-action@v2.4.0
+        id: git-diff
+        with:
+          base_branch: origin/${{ github.event.pull_request.base.ref }}  # Use the remote branch reference
+          raw_diff_file_output: diff.txt
+          file_output_only: "true"
+          search_path: "."
+          max_buffer_size: 10000000
 
       - name: Run Linting for JavaScript/TypeScript (ESLint)
         if: env.lang == 'nodejs'
         run: |
           npm install
-          npx eslint ${{ env.changed_files_content }} > eslint_report.txt || true
+          npx eslint $(cat ${{ steps.git-diff.outputs.raw-diff-path }}) > eslint_report.txt || true
         continue-on-error: true
 
       - name: Run Linting for Python (Pylint)
         if: env.lang == 'python'
         run: |
           pip install pylint
-          pylint ${{ env.changed_files_content }} > pylint_report.txt || true
+          pylint $(cat ${{ steps.git-diff.outputs.raw-diff-path }}) > pylint_report.txt || true
         continue-on-error: true
 
       - name: Run Linting for Ruby (Rubocop)
         if: env.lang == 'ruby'
         run: |
           gem install rubocop
-          rubocop ${{ env.changed_files_content }} > rubocop_report.txt || true
+          rubocop $(cat ${{ steps.git-diff.outputs.raw-diff-path }}) > rubocop_report.txt || true
         continue-on-error: true
 
       - name: Capture Lint Report
