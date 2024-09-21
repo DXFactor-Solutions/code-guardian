@@ -164,6 +164,8 @@ jobs:
         run: |
           # Read the parsed diff JSON file
           changes=$(cat parsed_diff.json)
+
+          echo $changes
           
           # Loop through each change and send it to OpenAI
           for change in $(echo "${changes}" | jq -c '.[]'); do
