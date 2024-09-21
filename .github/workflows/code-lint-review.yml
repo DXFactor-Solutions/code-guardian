@@ -65,7 +65,7 @@ jobs:
       - name: Fetch base branch
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}
-          git fetch --all
+          git rebase ${{ github.event.pull_request.base.ref }}
 
       - name: Get Changed Files from PR
         id: get_changed_files
