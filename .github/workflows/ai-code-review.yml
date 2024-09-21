@@ -89,6 +89,8 @@ jobs:
           echo "Decoded config contents:"
           cat decoded_config.yaml
 
+          LANG=${{ env.lang }}
+
           echo "Using language: $LANG"
           SYSTEM_PROMPT_FILE=$(yq e ".languages.${LANG}.system_prompt_file" decoded_config.yaml)
           USER_PROMPT_FILE=$(yq e ".languages.${LANG}.user_prompt_file" decoded_config.yaml)
