@@ -47,6 +47,7 @@ jobs:
             else
               echo "lang=unknown" >> $GITHUB_ENV
             fi
+          fi
           
       - name: Fail if Language Not Supported
         if: env.lang == 'unknown'
