@@ -50,14 +50,27 @@ jobs:
         with:
           node-version: '14'
 
+      # Parse the config file and store it as base64 in the environment variable 'content'
       - name: Parse Config File
         id: config
         run: |
-          echo "content=$(cat config/config.yaml | base64 -w 0)" >> $GITHUB_ENV
+          if [ -f config/config.yaml ]; then
+            echo "content=$(cat config/config.yaml | base64 -w 0)" >> $GITHUB_ENV
+          else
+            echo "Error: config.yaml not found."
+            exit 1
+          fi
 
+      # Decode the config file from the 'content' environment variable
       - name: Decode Config
         run: |
-          echo "${{ env.content }}" | base64 --decode > decoded_config.yaml
+          if [ -n "${{ env.content }}" ]; then
+            echo "${{ env.content }}" | base64 --decode > decoded_config.yaml
+            echo "Config file successfully decoded."
+          else
+            echo "Error: Config content not found."
+            exit 1
+          fi
 
       - name: Detect Programming Language
         id: detect_lang
