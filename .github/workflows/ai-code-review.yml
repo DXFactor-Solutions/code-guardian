@@ -135,11 +135,13 @@ jobs:
         run: git fetch --all
 
       - name: Get PR Diff
-        uses: GrantBirki/git-diff-action@v2.4.0
+        uses: GrantBirki/git-diff-action@v2.4.0  # GitHub Action for gathering the git diff
         id: git-diff
         with:
+          diff_relative: "true" # Ensures diff is relative to the current branch
+          base: origin/${{ github.event.pull_request.base.ref }} # The base branch to compare against
           raw_diff_file_output: diff.txt
-          file_output_only: "true"
+          file_output_only: "true"  # Excludes printing the diff to the console for security
 
       - name: Send Azure OpenAI API Request for Code Review
         id: ai_review
