@@ -133,18 +133,18 @@ jobs:
 
 
       - name: Get PR Diff
-        id: pr_diff
-        run: |
-          git fetch origin ${{ github.event.pull_request.base.ref }}
-          DIFF=$(git diff origin/${{ github.event.pull_request.base.ref }}...HEAD)
-          echo "diff=$(echo "$DIFF")" >> $GITHUB_ENV
+        uses: GrantBirki/git-diff-action@v2.4.0  # A github action for gathering the git diff of our pull request
+        id: git-diff
+        with:
+          raw_diff_file_output: diff.txt
+          file_output_only: "true" # Makes us exclude printing the diff on the console for security purposes
 
       - name: Send Azure OpenAI API Request for Code Review
         id: ai_review
         env:
           AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
         run: |
-          DIFF="${{ env.diff }}"
+          DIFF=$(cat ${{ steps.git-diff.outputs.raw-diff-path }})
           SYSTEM_PROMPT=$(cat system_prompt.txt)
           USER_PROMPT=$(cat user_prompt.txt)
           FULL_PROMPT="${USER_PROMPT}\n\nDIFF:\n${DIFF}"
