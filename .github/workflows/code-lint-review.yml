@@ -1,0 +1,117 @@
+# .github/workflows/code-lint-review.yml
+name: Code Review with Linting and PR Comment
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      language:
+        description: 'Programming Langugage'
+        required: true
+        type: string
+    secrets:
+      language: {}
+
+
+permissions:
+  contents: read
+  pull-requests: write   # Allows writing comments to the pull request
+
+jobs:
+  detect_language:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Detect Programming Language
+        id: detect_lang
+        run: |
+          SUPPORTED_LANGUAGES=("nodejs" "python" "ruby")
+          if [ -n "${{ github.event.inputs.language }}" ]; then
+            LANGUAGE="${{ github.event.inputs.language }}"
+            if [[ " ${SUPPORTED_LANGUAGES[@]} " =~ " ${LANGUAGE} " ]]; then
+              echo "Detected language: $LANGUAGE"
+              echo "lang=$LANGUAGE" >> $GITHUB_ENV
+            else
+              echo "lang=unknown" >> $GITHUB_ENV
+            fi
+          else
+            if [ -f package.json ]; then
+              echo "Detected language: nodejs"
+              echo "lang=nodejs" >> $GITHUB_ENV
+            elif [ -f requirements.txt ]; then
+              echo "Detected language: python"
+              echo "lang=python" >> $GITHUB_ENV
+            elif [ -f Gemfile ]; then
+              echo "Detected language: ruby"
+              echo "lang=ruby" >> $GITHUB_ENV
+            else
+              echo "lang=unknown" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: Fail if Language Not Supported
+        if: env.lang == 'unknown'
+        run: |
+          echo "Unsupported language detected. Exiting..."
+          exit 1
+
+  lint:
+    needs: detect_language
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Linting for JavaScript/TypeScript (ESLint)
+        if: env.lang == 'nodejs'
+        run: |
+          npm install
+          npx eslint src/ > eslint_report.txt || true  # Run eslint and save the report to a file
+        continue-on-error: true
+
+      - name: Run Linting for Python (Pylint)
+        if: env.lang == 'python'
+        run: |
+          pip install pylint
+          pylint src/ > pylint_report.txt || true  # Run pylint and save the report to a file
+        continue-on-error: true
+
+      - name: Run Linting for Ruby (Rubocop)
+        if: env.lang == 'ruby'
+        run: |
+          gem install rubocop
+          rubocop > rubocop_report.txt || true  # Run rubocop and save the report to a file
+        continue-on-error: true
+
+      - name: Capture Lint Report
+        id: capture_report
+        run: |
+          if [ -f eslint_report.txt ]; then
+            LINT_OUTPUT=$(cat eslint_report.txt)
+          elif [ -f pylint_report.txt ]; then
+            LINT_OUTPUT=$(cat pylint_report.txt)
+          elif [ -f rubocop_report.txt ]; then
+            LINT_OUTPUT=$(cat rubocop_report.txt)
+          else
+            LINT_OUTPUT="No linting errors found."
+          fi
+          echo "$LINT_OUTPUT" > lint_report.txt
+
+  post_comment:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install GitHub CLI (gh)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
+
+      - name: Read and Post Lint Report to PR Comment
+        run: |
+          if [ -f lint_report.txt ]; then
+            LINT_REPORT=$(cat lint_report.txt)
+            gh pr comment ${{ github.event.pull_request.number }} --body "$LINT_REPORT"
+          else
+            echo "No lint report found."
