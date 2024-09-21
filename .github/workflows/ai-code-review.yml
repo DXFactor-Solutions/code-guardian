@@ -33,6 +33,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
 
+      - name: Checkout action repository
+        uses: actions/checkout@v4.1.1
+        with:
+          repository: DXFactor-Solutions/code-guardian
+          path: common-repo
+
+      # Debug: List files in the project repo
+      - name: List files in project repo
+        run: |
+          echo "Project directory content:"
+          ls -la
+
+      # Debug: List files in the common repository
+      - name: List files in common repo
+        run: |
+          echo "Common repository content:"
+          ls -la common-repo
+
       - name: Install yq (YAML Processor) and jq
         run: |
           sudo apt-get update
