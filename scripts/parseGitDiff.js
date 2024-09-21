@@ -3,12 +3,22 @@ const path = require('path');
 
 // Function to parse the diff file
 function parseDiffFile(filePath) {
-    const data = fs.readFileSync(filePath, 'utf-8');
+    let data;
+    try {
+        data = fs.readFileSync(filePath, 'utf-8');
+    } catch (error) {
+        console.error("Error reading file:", error);
+        return [];
+    }
+
     const changes = [];
     let currentFile = '';
     let currentLine = 0;
 
     data.split('\n').forEach(line => {
+        console.log("Processing line:", line); // Debug log for each line
+        if (!line.trim()) return; // Skip empty lines
+
         if (line.startsWith('+++ ')) {
             currentFile = line.split(' ')[1]; // Get the file name from the diff
         } else if (line.startsWith('@@')) {
@@ -34,7 +44,16 @@ function parseDiffFile(filePath) {
 function main() {
     const diffFilePath = path.join(__dirname, '../../diff.txt'); // Adjust this if needed
     const parsedResults = parseDiffFile(diffFilePath);
-    console.log(JSON.stringify(parsedResults)); // Output JSON
+
+    // Print results for debugging
+    console.log("Parsed Results:", parsedResults);
+
+    // Ensure the results are valid JSON before converting
+    if (Array.isArray(parsedResults) && parsedResults.length > 0) {
+        console.log(JSON.stringify(parsedResults)); // Output JSON
+    } else {
+        console.error("Parsed results are empty or not an array.");
+    }
 }
 
 // Call the main function to execute
