@@ -167,7 +167,11 @@ jobs:
             \"messages\": [
               { \"role\": \"system\", \"content\": $escaped_system_prompt },
               { \"role\": \"user\", \"content\": $escaped_code }
-            ]
+            ],
+            \"temperature\": 0,
+            \"top_p\": 1,
+            \"n\": 1,
+            \"max_tokens\": 1500
           }"
 
           echo "request_payload: $request_payload"

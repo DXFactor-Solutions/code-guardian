@@ -132,6 +132,8 @@ jobs:
           sudo apt-get install -y gh
 
       - name: Read and Post Lint Report to PR Comment
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -f lint_report.txt ]; then
             LINT_REPORT=$(cat lint_report.txt)
