@@ -138,8 +138,6 @@ jobs:
         uses: GrantBirki/git-diff-action@v2.4.0
         id: git-diff
         with:
-          base: 'origin/${{ github.event.pull_request.base.ref }}'
-          target: 'HEAD'
           raw_diff_file_output: diff.txt
           file_output_only: "true"
 
