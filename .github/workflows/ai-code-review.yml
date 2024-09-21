@@ -50,6 +50,12 @@ jobs:
         with:
           node-version: '14'
       
+      - name: Show current directory
+        run: pwd
+      
+      - name: list all
+        run: ls -l
+
       - name: List config directory files
         run: ls -l config/
 
