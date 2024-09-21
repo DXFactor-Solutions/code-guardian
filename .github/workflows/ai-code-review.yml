@@ -8,13 +8,8 @@ on:
         description: 'API Key for Azure OpenAI'
         required: true
         type: string
-      github_token:
-        description: 'GitHub Token for commenting on PRs'
-        required: true
-        type: string
     secrets:
       azure_openai_api_key: {}
-      github_token: {}
 
 permissions:
   contents: read         # Allows reading of the repository content (e.g., to fetch PR diff)
@@ -25,7 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
-      GITHUB_TOKEN: ${{ inputs.github_token }}
 
     steps:
       - name: Checkout code
@@ -110,7 +104,7 @@ jobs:
 
       - name: Add AI Comments to PR
         env:
-          GITHUB_TOKEN: ${{ inputs.github_token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           RESPONSE="${{ env.response }}"
           gh pr comment ${{ github.event.pull_request.number }} --body "$RESPONSE"
