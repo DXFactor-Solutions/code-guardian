@@ -155,14 +155,21 @@ jobs:
           USER_PROMPT=$(cat user_prompt.txt)
           FULL_PROMPT="${USER_PROMPT}\n\nDIFF:\n${DIFF}"
 
+          echo "Request data =>"
+          echo "DIFF => $DIFF"
+          echo "SYSTEM_PROMPT => $SYSTEM_PROMPT"
+          echo "USER_PROMPT => $USER_PROMPT"
+          echo "FULL_PROMPT => $FULL_PROMPT"
+          echo "AZURE_OPENAI_API_KEY => $AZURE_OPENAI_API_KEY"
+
           RESPONSE=$(curl -s -X POST https://code-guardians.openai.azure.com/openai/deployments/code-guardians-gpt-4o/chat/completions?api-version=2024-06-01 \
             -H "Content-Type: application/json" \
             -H "api-key: $AZURE_OPENAI_API_KEY" \
             -d '{
-              "messages": [{"role": "system", "content": "'"$SYSTEM_PROMPT"'"}, {"role": "user", "content": "'"$FULL_PROMPT"'"}],
-              "max_tokens": 1500,
-              "temperature": 0.5
+              "messages": [{"role": "system", "content": "'"$SYSTEM_PROMPT"'"}, {"role": "user", "content": "'"$FULL_PROMPT"'"}]
             }')
+
+          echo "Response from GPT => $RESPONSE"
 
           if [[ -z "$RESPONSE" || "$RESPONSE" == "null" ]]; then
             echo "Azure OpenAI response was empty. Exiting..."
