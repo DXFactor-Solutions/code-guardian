@@ -184,8 +184,11 @@ jobs:
             exit 1
           fi
 
+          # Extract the code review suggestions from the response
+          code_review_suggestions=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+
           # Save the suggestions to a file
-          echo "$RESPONSE" > code_suggestions.txt
+          echo "$code_review_suggestions" > code_suggestions.txt
 
       - name: Add AI Comments to PR
         env:
