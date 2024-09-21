@@ -151,10 +151,13 @@ jobs:
           GIT_LOG=$(git log origin/develop..HEAD --oneline | cut -d ' ' -f2-)
           echo "git_log_output=$GIT_LOG" >> $GITHUB_ENV
         
+      - name: List Files for Debugging
+        run: ls -R common-repo/scripts
+
       - name: Process Diff File and Extract Changes
         id: process_diff
         run: |
-          node common-repo/scripts/parseDiff.js > parsed_diff.json
+          node common-repo/scripts/parseGitDiff.js > parsed_diff.json
 
       - name: Send Line-by-Line Review Request to Azure OpenAI
         id: ai_review
