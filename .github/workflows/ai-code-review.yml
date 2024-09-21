@@ -86,11 +86,30 @@ jobs:
 
       - name: Get Language-Specific Prompt
         run: |
-          LANG=${{ env.lang }}
+          echo "Decoded config contents:"
+          cat decoded_config.yaml
+
+          echo "Using language: $LANG"
           SYSTEM_PROMPT_FILE=$(yq e ".languages.${LANG}.system_prompt_file" decoded_config.yaml)
           USER_PROMPT_FILE=$(yq e ".languages.${LANG}.user_prompt_file" decoded_config.yaml)
-          cat "$SYSTEM_PROMPT_FILE" > system_prompt.txt
-          cat "$USER_PROMPT_FILE" > user_prompt.txt
+
+          echo "System prompt file path: $SYSTEM_PROMPT_FILE"
+          echo "User prompt file path: $USER_PROMPT_FILE"
+
+          if [ -f "$SYSTEM_PROMPT_FILE" ]; then
+            cat "$SYSTEM_PROMPT_FILE" > system_prompt.txt
+          else
+            echo "System prompt file not found: $SYSTEM_PROMPT_FILE"
+            exit 1
+          fi
+
+          if [ -f "$USER_PROMPT_FILE" ]; then
+            cat "$USER_PROMPT_FILE" > user_prompt.txt
+          else
+            echo "User prompt file not found: $USER_PROMPT_FILE"
+            exit 1
+          fi
+
 
       - name: Get PR Diff
         id: pr_diff
