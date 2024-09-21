@@ -9,8 +9,14 @@ on:
         description: 'API Key for Azure OpenAI'
         required: true
         type: string
+      language:
+        description: 'Programming Langugage'
+        required: true
+        type: string
     secrets:
       azure_openai_api_key: {}
+      language: {}
+
 
 permissions:
   contents: read
@@ -21,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
+      LANGUAGE: ${{ inputs.language }}
 
     steps:
       - name: Checkout code
@@ -52,17 +59,23 @@ jobs:
         run: |
           echo "${{ env.content }}" | base64 --decode > decoded_config.yaml
 
-      - name: List files in the directory
-        run: |
-          ls -al
-
       - name: Detect Programming Language
         id: detect_lang
         run: |
-          if [ -f package.json ]; then
-            echo "lang=nodejs" >> $GITHUB_ENV
+          if [ -n "$LANGUAGE" ]; then
+            # List of supported languages
+            SUPPORTED_LANGUAGES=("nodejs" "python" "ruby")
+            if [[ " ${SUPPORTED_LANGUAGES[@]} " =~ " ${LANGUAGE} " ]]; then
+              echo "lang=$LANGUAGE" >> $GITHUB_ENV
+            else
+              echo "lang=unknown" >> $GITHUB_ENV
+            fi
           else
-            echo "lang=unknown" >> $GITHUB_ENV
+            if [ -f package.json ]; then
+              echo "lang=nodejs" >> $GITHUB_ENV
+            else
+              echo "lang=unknown" >> $GITHUB_ENV
+            fi
           fi
 
       - name: Fail if Language Not Supported
