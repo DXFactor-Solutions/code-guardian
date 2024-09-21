@@ -126,10 +126,6 @@ jobs:
           echo "logging lint output => "
           cat lint_report.txt
 
-  post_lint_comment:
-    needs: lint
-    runs-on: ubuntu-latest
-    steps:
       - name: Install GitHub CLI (gh)
         run: |
           sudo apt-get update
