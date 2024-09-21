@@ -162,7 +162,9 @@ jobs:
         id: ai_review
         env:
           AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Loop through the diff file and read each line
           while IFS= read -r diff_line; do
             file=$(echo "$diff_line" | cut -d ' ' -f 1)
             line_number=$(echo "$diff_line" | cut -d ' ' -f 2)
@@ -191,10 +193,20 @@ jobs:
             # Extract the review comment from the response
             review_comment=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
 
-            # Add review comment to PR at the specific line number
-            gh pr review --body "$review_comment" --path "$file" --position "$line_number"
-            
+            # GitHub API call to add the comment at a specific line
+            curl -s -X POST "https://api.github.com/repos/<owner>/<repo>/pulls/<pull_number>/comments" \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"body\": \"$review_comment\",
+                \"commit_id\": \"$(git rev-parse HEAD)\",
+                \"path\": \"$file\",
+                \"line\": $line_number,
+                \"side\": \"RIGHT\"
+              }"
+              
           done < parsed_diff.txt
+
       # - name: Send Azure OpenAI API Request for Code Review
       #   id: ai_review
       #   env:
