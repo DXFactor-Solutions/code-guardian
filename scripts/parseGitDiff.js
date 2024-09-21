@@ -34,7 +34,7 @@ function parseDiffFile(filePath) {
 function main() {
     const diffFilePath = path.join(__dirname, '../../diff.txt'); // Adjust this if needed
     const parsedResults = parseDiffFile(diffFilePath);
-    console.log(JSON.stringify(parsedResults, null, 2)); // Output JSON
+    console.log(JSON.stringify(parsedResults)); // Output JSON
 }
 
 // Call the main function to execute
