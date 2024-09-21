@@ -154,9 +154,7 @@ jobs:
       - name: Process Diff File and Extract Changes
         id: process_diff
         run: |
-          # Parse the diff file and extract individual changes with line numbers
-          # The output format is: file_name:line_number:changed_code
-          awk '/^\+\+\+ / { file=$2 } /^\@\@/ { split($0, a, " "); sub(/,/, "", a[2]); line=substr(a[2], 2); next } /^(\+)(?!\+|\+ )/ { print file, line++, substr($0, 2) }' diff.txt > parsed_diff.txt
+          node parseDiff.js > parsed_diff.json
 
       - name: Send Line-by-Line Review Request to Azure OpenAI
         id: ai_review
@@ -164,11 +162,14 @@ jobs:
           AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Loop through the diff file and read each line
-          while IFS= read -r diff_line; do
-            file=$(echo "$diff_line" | cut -d ' ' -f 1)
-            line_number=$(echo "$diff_line" | cut -d ' ' -f 2)
-            changed_code=$(echo "$diff_line" | cut -d ' ' -f 3-)
+          # Read the parsed diff JSON file
+          changes=$(cat parsed_diff.json)
+          
+          # Loop through each change and send it to OpenAI
+          for change in $(echo "${changes}" | jq -c '.[]'); do
+            file=$(echo "$change" | jq -r '.file')
+            line_number=$(echo "$change" | jq -r '.line')
+            changed_code=$(echo "$change" | jq -r '.code')
 
             # Escape the code for OpenAI API
             escaped_code=$(echo "$changed_code" | jq -s -R -r @json)
@@ -215,7 +216,7 @@ jobs:
                 \"side\": \"RIGHT\"
               }"
               
-          done < parsed_diff.txt
+          done
 
       # - name: Send Azure OpenAI API Request for Code Review
       #   id: ai_review
