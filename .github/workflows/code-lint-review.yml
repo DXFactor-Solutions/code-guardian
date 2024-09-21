@@ -129,3 +129,4 @@ jobs:
             gh pr comment ${{ github.event.pull_request.number }} --body "$LINT_REPORT"
           else
             echo "No lint report found."
+          fi
