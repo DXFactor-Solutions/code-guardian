@@ -12,7 +12,7 @@ on:
       azure_openai_api_key: {}
 
 permissions:
-  contents: read         # Allows reading of the repository content (e.g., to fetch PR diff)
+  contents: read
   pull-requests: write   # Allows writing comments to the pull request
 
 jobs:
