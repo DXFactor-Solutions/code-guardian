@@ -147,8 +147,8 @@ jobs:
       
       - name: Get Git Log (without commit IDs)
         id: git_log
-        run:
-            GIT_LOG=$(git log HEAD...fix/test-git-action --oneline | cut -d ' ' -f2-)           
+        run: |
+            GIT_LOG=$(git log HEAD...fix/test-git-action --oneline | cut -d ' ' -f2-)
             echo "git_log_output=$GIT_LOG" >> $GITHUB_ENV
   
       - name: Send Azure OpenAI API Request for Code Review
