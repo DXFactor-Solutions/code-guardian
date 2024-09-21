@@ -144,7 +144,21 @@ jobs:
           file_output_only: "true"
           search_path: "."
           max_buffer_size: 10000000
+      
+      - name: Fetch Oldest PR Comment
+        id: oldest-comment
+        run: |
+          # Fetch all comments and sort them by creation date (oldest first)
+          oldest_comment=$(gh pr view ${{ github.event.pull_request.number }} --comments --json comments | jq -r '.comments | sort_by(.createdAt) | .[0].body')
 
+          if [ -z "$oldest_comment" ]; then
+            echo "No comments found in the PR."
+            exit 1
+          else
+            echo "Oldest comment: $oldest_comment"
+            echo "oldest_comment=$oldest_comment" >> $GITHUB_ENV
+          fi
+  
       - name: Send Azure OpenAI API Request for Code Review
         id: ai_review
         env:
