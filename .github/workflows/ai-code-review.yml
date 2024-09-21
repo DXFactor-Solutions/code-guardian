@@ -151,60 +151,103 @@ jobs:
           GIT_LOG=$(git log origin/develop..HEAD --oneline | cut -d ' ' -f2-)
           echo "git_log_output=$GIT_LOG" >> $GITHUB_ENV
         
-  
-      - name: Send Azure OpenAI API Request for Code Review
+      - name: Process Diff File and Extract Changes
+        id: process_diff
+        run: |
+          # Parse the diff file and extract individual changes with line numbers
+          # The output format is: file_name:line_number:changed_code
+          awk '/^\+\+\+ / { file=$2 } /^\@\@/ { split($0, a, " "); line=a[2]; next } /^(\+)(?!\+|\+ )/ { print file, line++, substr($0, 2) }' diff.txt > parsed_diff.txt
+
+      - name: Send Line-by-Line Review Request to Azure OpenAI
         id: ai_review
         env:
           AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
         run: |
-          DIFF=$(cat ${{ steps.git-diff.outputs.raw-diff-path }})
-          SYSTEM_PROMPT=$(cat system_prompt.txt)
-          USER_PROMPT=$(cat user_prompt.txt)
+          while IFS= read -r diff_line; do
+            file=$(echo "$diff_line" | cut -d ' ' -f 1)
+            line_number=$(echo "$diff_line" | cut -d ' ' -f 2)
+            changed_code=$(echo "$diff_line" | cut -d ' ' -f 3-)
 
-          # Escape DIFF to ensure it's valid JSON
-          escaped_code=$(echo "$DIFF" | jq -s -R -r @json)
-          # Escape SYSTEM_PROMPT and USER_PROMPT to ensure they're valid JSON
-          escaped_system_prompt=$(echo "$SYSTEM_PROMPT" | jq -s -R -r @json)
-          escaped_user_prompt=$(echo "$USER_PROMPT" | jq -s -R -r @json)
+            # Escape the code for OpenAI API
+            escaped_code=$(echo "$changed_code" | jq -s -R -r @json)
 
-          echo "Escaped code for request: $escaped_code"
+            # Construct the request payload with the escaped code
+            request_payload="{
+              \"messages\": [
+                { \"role\": \"system\", \"content\": $(cat system_prompt.txt | jq -s -R -r @json) },
+                { \"role\": \"user\", \"content\": $escaped_code }
+              ],
+              \"temperature\": 0,
+              \"top_p\": 1,
+              \"n\": 1,
+              \"max_tokens\": 1500
+            }"
 
-          # Construct the JSON payload with escaped content
-          request_payload="{
-            \"messages\": [
-              { \"role\": \"system\", \"content\": $escaped_system_prompt },
-              { \"role\": \"user\", \"content\": $escaped_code }
-            ],
-            \"temperature\": 0,
-            \"top_p\": 1,
-            \"n\": 1,
-            \"max_tokens\": 1500
-          }"
+            RESPONSE=$(curl -s -X POST https://code-guardians.openai.azure.com/openai/deployments/code-guardians-gpt-4o/chat/completions?api-version=2024-06-01 \
+              -H "Content-Type: application/json" \
+              -H "api-key: $AZURE_OPENAI_API_KEY" \
+              -d "$request_payload")
 
-          echo "request_payload: $request_payload"
+            # Extract the review comment from the response
+            review_comment=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
 
-          RESPONSE=$(curl -s -X POST https://code-guardians.openai.azure.com/openai/deployments/code-guardians-gpt-4o/chat/completions?api-version=2024-06-01 \
-            -H "Content-Type: application/json" \
-            -H "api-key: $AZURE_OPENAI_API_KEY" \
-            -d "$request_payload")
+            # Add review comment to PR at the specific line number
+            gh pr review --body "$review_comment" --path "$file" --position "$line_number"
+            
+          done < parsed_diff.txt
+      # - name: Send Azure OpenAI API Request for Code Review
+      #   id: ai_review
+      #   env:
+      #     AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
+      #   run: |
+      #     DIFF=$(cat ${{ steps.git-diff.outputs.raw-diff-path }})
+      #     SYSTEM_PROMPT=$(cat system_prompt.txt)
+      #     USER_PROMPT=$(cat user_prompt.txt)
 
-          echo "Response from GPT => $RESPONSE"
+      #     # Escape DIFF to ensure it's valid JSON
+      #     escaped_code=$(echo "$DIFF" | jq -s -R -r @json)
+      #     # Escape SYSTEM_PROMPT and USER_PROMPT to ensure they're valid JSON
+      #     escaped_system_prompt=$(echo "$SYSTEM_PROMPT" | jq -s -R -r @json)
+      #     escaped_user_prompt=$(echo "$USER_PROMPT" | jq -s -R -r @json)
 
-          if [[ -z "$RESPONSE" || "$RESPONSE" == "null" ]]; then
-            echo "Azure OpenAI response was empty. Exiting..."
-            exit 1
-          fi
+      #     echo "Escaped code for request: $escaped_code"
 
-          # Extract the code review suggestions from the response
-          code_review_suggestions=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+      #     # Construct the JSON payload with escaped content
+      #     request_payload="{
+      #       \"messages\": [
+      #         { \"role\": \"system\", \"content\": $escaped_system_prompt },
+      #         { \"role\": \"user\", \"content\": $escaped_code }
+      #       ],
+      #       \"temperature\": 0,
+      #       \"top_p\": 1,
+      #       \"n\": 1,
+      #       \"max_tokens\": 1500
+      #     }"
 
-          # Save the suggestions to a file
-          echo "$code_review_suggestions" > code_suggestions.txt
+      #     echo "request_payload: $request_payload"
 
-      - name: Add AI Comments to PR
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          RESPONSE=$(cat code_suggestions.txt)
+      #     RESPONSE=$(curl -s -X POST https://code-guardians.openai.azure.com/openai/deployments/code-guardians-gpt-4o/chat/completions?api-version=2024-06-01 \
+      #       -H "Content-Type: application/json" \
+      #       -H "api-key: $AZURE_OPENAI_API_KEY" \
+      #       -d "$request_payload")
 
-          gh pr comment ${{ github.event.pull_request.number }} --body "$RESPONSE"
+      #     echo "Response from GPT => $RESPONSE"
+
+      #     if [[ -z "$RESPONSE" || "$RESPONSE" == "null" ]]; then
+      #       echo "Azure OpenAI response was empty. Exiting..."
+      #       exit 1
+      #     fi
+
+      #     # Extract the code review suggestions from the response
+      #     code_review_suggestions=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+
+      #     # Save the suggestions to a file
+      #     echo "$code_review_suggestions" > code_suggestions.txt
+
+      # - name: Add AI Comments to PR
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: |
+      #     RESPONSE=$(cat code_suggestions.txt)
+
+      #     gh pr comment ${{ github.event.pull_request.number }} --body "$RESPONSE"
