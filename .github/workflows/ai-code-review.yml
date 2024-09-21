@@ -139,11 +139,11 @@ jobs:
         uses: GrantBirki/git-diff-action@v2.4.0
         id: git-diff
         with:
-          base_branch: ${{ github.event.pull_request.base.ref }} # Use the base branch from the PR
+          base_branch: origin/${{ github.event.pull_request.base.ref }}  # Use the remote branch reference
           raw_diff_file_output: diff.txt
-          file_output_only: "true"  # Exclude printing the diff to the console for security
-          search_path: "."          # Specify the search path for the diff (default is current directory)
-          max_buffer_size: 10000000  # Adjust buffer size to handle large diffs
+          file_output_only: "true"
+          search_path: "."
+          max_buffer_size: 10000000
 
       - name: Send Azure OpenAI API Request for Code Review
         id: ai_review
