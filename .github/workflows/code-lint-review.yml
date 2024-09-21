@@ -69,7 +69,7 @@ jobs:
       - name: Get All Changed Files
         id: get_changed_files
         run: |
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD > changed_files.txt
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}..HEAD > changed_files.txt
           echo "changed_files=$(cat changed_files.txt)" >> $GITHUB_ENV
 
       - name: Run Linting for JavaScript/TypeScript (ESLint)
