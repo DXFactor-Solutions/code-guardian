@@ -156,7 +156,7 @@ jobs:
         run: |
           # Parse the diff file and extract individual changes with line numbers
           # The output format is: file_name:line_number:changed_code
-          awk '/^\+\+\+ / { file=$2 } /^\@\@/ { split($0, a, " "); sub(/,/, "", a[2]); line=substr(a[2], 2); next } /^\+/ && !/^\+\+\+/ { print file, line++, substr($0, 2) }' diff.txt > parsed_diff.txt
+          awk '/^\+\+\+ / { file=$2 } /^\@\@/ { split($0, a, " "); sub(/,/, "", a[2]); line=substr(a[2], 2); next } /^(\+)(?!\+|\+ )/ { print file, line++, substr($0, 2) }' diff.txt > parsed_diff.txt
 
       - name: Send Line-by-Line Review Request to Azure OpenAI
         id: ai_review
@@ -193,10 +193,20 @@ jobs:
             # Extract the review comment from the response
             review_comment=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
 
+            echo $review_comment
+
+            # Extract repository and pull request number
+            REPO=${{ github.repository }}    # Sets the repo as "owner/repo"
+            PR_NUMBER=${{ github.event.pull_request.number }}  # Gets the PR number dynamically
+
+            # GitHub API URL for fetching PR comments
+            API_URL="https://api.github.com/repos/$REPO/pulls/$PR_NUMBER/comments"
+
             # GitHub API call to add the comment at a specific line
-            curl -s -X POST "https://api.github.com/repos/<owner>/<repo>/pulls/<pull_number>/comments" \
-              -H "Authorization: token $GITHUB_TOKEN" \
-              -H "Content-Type: application/json" \
+            curl -s -X POST "$API_URL" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
               -d "{
                 \"body\": \"$review_comment\",
                 \"commit_id\": \"$(git rev-parse HEAD)\",
