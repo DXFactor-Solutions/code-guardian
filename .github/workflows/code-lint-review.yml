@@ -64,25 +64,42 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Get Changed Files
+        id: get_changed_files
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD)
+          echo "$CHANGED_FILES" > changed_files.txt
+
+      - name: Read Changed Files into Env Var
+        run: |
+          if [ -f changed_files.txt ]; then
+            CHANGED_FILES_CONTENT=$(cat changed_files.txt)
+            echo "changed_files_content=$CHANGED_FILES_CONTENT" >> $GITHUB_ENV
+          else
+            echo "No changed files found."
+            exit 1
+          fi
+
       - name: Run Linting for JavaScript/TypeScript (ESLint)
         if: env.lang == 'nodejs'
         run: |
           npm install
-          npx eslint src/ > eslint_report.txt || true  # Run eslint and save the report to a file
+          npx eslint ${{ env.changed_files_content }} > eslint_report.txt || true
         continue-on-error: true
 
       - name: Run Linting for Python (Pylint)
         if: env.lang == 'python'
         run: |
           pip install pylint
-          pylint src/ > pylint_report.txt || true  # Run pylint and save the report to a file
+          pylint ${{ env.changed_files_content }} > pylint_report.txt || true
         continue-on-error: true
 
       - name: Run Linting for Ruby (Rubocop)
         if: env.lang == 'ruby'
         run: |
           gem install rubocop
-          rubocop > rubocop_report.txt || true  # Run rubocop and save the report to a file
+          rubocop ${{ env.changed_files_content }} > rubocop_report.txt || true
         continue-on-error: true
 
       - name: Capture Lint Report
@@ -95,7 +112,7 @@ jobs:
           elif [ -f rubocop_report.txt ]; then
             LINT_OUTPUT=$(cat rubocop_report.txt)
           else
-            LINT_OUTPUT="No linting errors found."
+            LINT_OUTPUT="No linting errors found in the changed files."
           fi
           echo "$LINT_OUTPUT" > lint_report.txt
 
