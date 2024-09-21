@@ -1,4 +1,3 @@
-# .github/workflows/code-lint-review.yml
 name: Code Review with Linting and PR Comment
 
 on:
@@ -6,12 +5,11 @@ on:
   workflow_call:
     inputs:
       language:
-        description: 'Programming Langugage'
+        description: 'Programming Language'
         required: true
         type: string
     secrets:
       language: {}
-
 
 permissions:
   contents: read
@@ -68,35 +66,31 @@ jobs:
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}
 
-      - name: Get PR Diff
-        uses: GrantBirki/git-diff-action@v2.4.0
-        id: git-diff
-        with:
-          base_branch: origin/${{ github.event.pull_request.base.ref }}  # Use the remote branch reference
-          raw_diff_file_output: diff.txt
-          file_output_only: "true"
-          search_path: "."
-          max_buffer_size: 10000000
+      - name: Get All Changed Files
+        id: get_changed_files
+        run: |
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD > changed_files.txt
+          echo "changed_files=$(cat changed_files.txt)" >> $GITHUB_ENV
 
       - name: Run Linting for JavaScript/TypeScript (ESLint)
         if: env.lang == 'nodejs'
         run: |
           npm install
-          npx eslint $(cat ${{ steps.git-diff.outputs.raw-diff-path }}) > eslint_report.txt || true
+          npx eslint $(cat changed_files.txt) > eslint_report.txt || true
         continue-on-error: true
 
       - name: Run Linting for Python (Pylint)
         if: env.lang == 'python'
         run: |
           pip install pylint
-          pylint $(cat ${{ steps.git-diff.outputs.raw-diff-path }}) > pylint_report.txt || true
+          pylint $(cat changed_files.txt) > pylint_report.txt || true
         continue-on-error: true
 
       - name: Run Linting for Ruby (Rubocop)
         if: env.lang == 'ruby'
         run: |
           gem install rubocop
-          rubocop $(cat ${{ steps.git-diff.outputs.raw-diff-path }}) > rubocop_report.txt || true
+          rubocop $(cat changed_files.txt) > rubocop_report.txt || true
         continue-on-error: true
 
       - name: Capture Lint Report
@@ -113,7 +107,7 @@ jobs:
           fi
           echo "$LINT_OUTPUT" > lint_report.txt
 
-  post_comment:
+  post_lint_comment:
     needs: lint
     runs-on: ubuntu-latest
     steps:
