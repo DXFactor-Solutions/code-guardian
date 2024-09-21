@@ -148,7 +148,7 @@ jobs:
       - name: Get Git Log (without commit IDs)
         id: git_log
         run: |
-          GIT_LOG=$(git log origin/develop...HEAD --oneline | cut -d ' ' -f2-)
+          GIT_LOG=$(git log origin/develop..HEAD --oneline | cut -d ' ' -f2-)
           echo "git_log_output=$GIT_LOG" >> $GITHUB_ENV
         
   
