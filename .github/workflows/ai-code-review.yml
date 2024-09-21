@@ -167,8 +167,15 @@ jobs:
           # Read the parsed diff JSON file
           changes=$(cat parsed_diff.json)
 
-          echo $changes
-          
+          # Check if the file is empty
+          if [ -z "$changes" ]; then
+            echo "Error: parsed_diff.json is empty."
+            exit 1
+          fi
+
+          # Print the changes to debug
+          echo "$changes"
+
           # Loop through each change and send it to OpenAI
           for change in $(echo "${changes}" | jq -c '.[]'); do
             file=$(echo "$change" | jq -r '.file')
@@ -178,7 +185,7 @@ jobs:
             # Escape the code for OpenAI API
             escaped_code=$(echo "$changed_code" | jq -s -R -r @json)
 
-            # Construct the request payload with the escaped code
+            # Construct the request payload
             request_payload="{
               \"messages\": [
                 { \"role\": \"system\", \"content\": $(cat system_prompt.txt | jq -s -R -r @json) },
