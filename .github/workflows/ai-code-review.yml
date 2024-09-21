@@ -1,0 +1,116 @@
+# .github/workflows/ai-driven-review.yml
+name: AI-Driven Code Review
+
+on:
+  workflow_call:
+    inputs:
+      azure_openai_api_key:
+        description: 'API Key for Azure OpenAI'
+        required: true
+        type: string
+      github_token:
+        description: 'GitHub Token for commenting on PRs'
+        required: true
+        type: string
+    secrets:
+      azure_openai_api_key: {}
+      github_token: {}
+
+permissions:
+  contents: read         # Allows reading of the repository content (e.g., to fetch PR diff)
+  pull-requests: write   # Allows writing comments to the pull request
+
+jobs:
+  code_review:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
+      GITHUB_TOKEN: ${{ inputs.github_token }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+
+      - name: Install yq (YAML Processor) and jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq yq
+
+      - name: Install GitHub CLI (gh)
+        uses: actions/setup-gh@v2
+
+      - name: Set up Node.js (if needed)
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - name: Parse Config File
+        id: config
+        run: |
+          echo "content=$(cat config/config.yaml | base64)" >> $GITHUB_ENV
+
+      - name: Decode Config
+        run: |
+          echo "${{ env.content }}" | base64 --decode > decoded_config.yaml
+
+      - name: Detect Programming Language
+        id: detect_lang
+        run: |
+          if [ -f package.json ]; then
+            echo "lang=nodejs" >> $GITHUB_ENV
+          else
+            echo "lang=unknown" >> $GITHUB_ENV
+
+      - name: Fail if Language Not Supported
+        if: env.lang == 'unknown'
+        run: |
+          echo "Unsupported language detected. Skipping code review."
+          exit 1
+
+      - name: Get Language-Specific Prompt
+        run: |
+          LANG=${{ env.lang }}
+          SYSTEM_PROMPT_FILE=$(yq e ".languages.${LANG}.system_prompt_file" decoded_config.yaml)
+          USER_PROMPT_FILE=$(yq e ".languages.${LANG}.user_prompt_file" decoded_config.yaml)
+          cat "$SYSTEM_PROMPT_FILE" > system_prompt.txt
+          cat "$USER_PROMPT_FILE" > user_prompt.txt
+
+      - name: Get PR Diff
+        id: pr_diff
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          DIFF=$(git diff origin/${{ github.event.pull_request.base.ref }}...HEAD)
+          echo "diff=$(echo "$DIFF")" >> $GITHUB_ENV
+
+      - name: Send Azure OpenAI API Request for Code Review
+        id: ai_review
+        env:
+          AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
+        run: |
+          DIFF="${{ env.diff }}"
+          SYSTEM_PROMPT=$(cat system_prompt.txt)
+          USER_PROMPT=$(cat user_prompt.txt)
+          FULL_PROMPT="${USER_PROMPT}\n\nDIFF:\n${DIFF}"
+
+          RESPONSE=$(curl -s -X POST https://code-guardians.openai.azure.com/openai/deployments/code-guardians-gpt-4o/chat/completions?api-version=2024-05-13 \
+            -H "Content-Type: application/json" \
+            -H "api-key: $AZURE_OPENAI_API_KEY" \
+            -d '{
+              "messages": [{"role": "system", "content": "'"$SYSTEM_PROMPT"'"}, {"role": "user", "content": "'"$FULL_PROMPT"'"}],
+              "max_tokens": 1500,
+              "temperature": 0.5
+            }')
+
+          if [[ -z "$RESPONSE" || "$RESPONSE" == "null" ]]; then
+            echo "Azure OpenAI response was empty. Exiting..."
+            exit 1
+          fi
+
+          echo "response=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')" >> $GITHUB_ENV
+
+      - name: Add AI Comments to PR
+        env:
+          GITHUB_TOKEN: ${{ inputs.github_token }}
+        run: |
+          RESPONSE="${{ env.response }}"
+          gh pr comment ${{ github.event.pull_request.number }} --body "$RESPONSE"
