@@ -29,7 +29,9 @@ jobs:
       - name: Install yq (YAML Processor) and jq
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq yq
+          sudo apt-get install -y jq
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.6.1/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       - name: Install GitHub CLI (gh)
         run: |
