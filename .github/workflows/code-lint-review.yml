@@ -73,6 +73,7 @@ jobs:
           # Check if the base branch exists
           if git branch -r | grep -q "$BASE_REF"; then
             # Get changed files if the base branch exists
+            echo "git diff --name-only $BASE_REF...HEAD"
             git diff --name-only $BASE_REF...HEAD > changed_files.txt
             echo "changed_files=$(cat changed_files.txt)" >> $GITHUB_ENV
           else
