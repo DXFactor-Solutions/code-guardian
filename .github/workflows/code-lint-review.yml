@@ -18,39 +18,41 @@ permissions:
 jobs:
   detect_language:
     runs-on: ubuntu-latest
+    outputs:
+      lang: ${{ steps.set_lang.outputs.lang }}  # Set the detected language as output
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
 
       - name: Detect Programming Language
-        id: detect_lang
+        id: set_lang
         run: |
           SUPPORTED_LANGUAGES=("nodejs" "python" "ruby")
           if [ -n "${{ github.event.inputs.language }}" ]; then
             LANGUAGE="${{ github.event.inputs.language }}"
             if [[ " ${SUPPORTED_LANGUAGES[@]} " =~ " ${LANGUAGE} " ]]; then
               echo "Detected language: $LANGUAGE"
-              echo "lang=$LANGUAGE" >> $GITHUB_ENV
+              echo "::set-output name=lang::$LANGUAGE"
             else
-              echo "lang=unknown" >> $GITHUB_ENV
+              echo "::set-output name=lang::unknown"
             fi
           else
             if [ -f package.json ]; then
               echo "Detected language: nodejs"
-              echo "lang=nodejs" >> $GITHUB_ENV
+              echo "::set-output name=lang::nodejs"
             elif [ -f requirements.txt ]; then
               echo "Detected language: python"
-              echo "lang=python" >> $GITHUB_ENV
+              echo "::set-output name=lang::python"
             elif [ -f Gemfile ]; then
               echo "Detected language: ruby"
-              echo "lang=ruby" >> $GITHUB_ENV
+              echo "::set-output name=lang::ruby"
             else
-              echo "lang=unknown" >> $GITHUB_ENV
+              echo "::set-output name=lang::unknown"
             fi
           fi
-          
+
       - name: Fail if Language Not Supported
-        if: env.lang == 'unknown'
+        if: steps.set_lang.outputs.lang == 'unknown'
         run: |
           echo "Unsupported language detected. Exiting..."
           exit 1
@@ -78,7 +80,7 @@ jobs:
           echo "Changed files: ${{ steps.get_file_changes.outputs.files }}"
 
       - name: Run Linting for JavaScript/TypeScript (ESLint)
-        if: env.lang == 'nodejs'
+        if: needs.detect_language.outputs.lang == 'nodejs'  # Use output from the previous job
         run: |
           npm install
           echo "logging changed files.."
@@ -89,14 +91,14 @@ jobs:
         continue-on-error: true
 
       - name: Run Linting for Python (Pylint)
-        if: env.lang == 'python'
+        if: needs.detect_language.outputs.lang == 'python'  # Use output from the previous job
         run: |
           pip install pylint
           pylint ${{ steps.get_file_changes.outputs.files }} > pylint_report.txt || true
         continue-on-error: true
 
       - name: Run Linting for Ruby (Rubocop)
-        if: env.lang == 'ruby'
+        if: needs.detect_language.outputs.lang == 'ruby'  # Use output from the previous job
         run: |
           gem install rubocop
           rubocop ${{ steps.get_file_changes.outputs.files }} > rubocop_report.txt || true
