@@ -47,8 +47,7 @@ jobs:
             else
               echo "lang=unknown" >> $GITHUB_ENV
             fi
-          fi
-
+          
       - name: Fail if Language Not Supported
         if: env.lang == 'unknown'
         run: |
@@ -66,7 +65,7 @@ jobs:
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}
 
-     - name: Get file changes
+      - name: Get file changes
         id: get_file_changes
         uses: dorner/file-changes-action@v1.2.0
         with:
@@ -128,4 +127,3 @@ jobs:
             gh pr comment ${{ github.event.pull_request.number }} --body "$LINT_REPORT"
           else
             echo "No lint report found."
-          fi
