@@ -39,18 +39,6 @@ jobs:
           repository: DXFactor-Solutions/code-guardian
           path: common-repo
 
-      # Debug: List files in the project repo
-      - name: List files in project repo
-        run: |
-          echo "Project directory content:"
-          ls -la
-
-      # Debug: List files in the common repository
-      - name: List files in common repo
-        run: |
-          echo "Common repository content:"
-          ls -la common-repo
-
       - name: Install yq (YAML Processor) and jq
         run: |
           sudo apt-get update
@@ -67,22 +55,13 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '14'
-      
-      - name: Show current directory
-        run: pwd
-      
-      - name: list all
-        run: ls -l
-
-      - name: List config directory files
-        run: ls -l config/
 
       # Parse the config file and store it as base64 in the environment variable 'content'
       - name: Parse Config File
         id: config
         run: |
-          if [ -f config/config.yaml ]; then
-            echo "content=$(cat config/config.yaml | base64 -w 0)" >> $GITHUB_ENV
+          if [ -f common-repo/config/config.yaml ]; then
+            echo "content=$(cat common-repo/config/config.yaml | base64 -w 0)" >> $GITHUB_ENV
           else
             echo "Error: config.yaml not found."
             exit 1
