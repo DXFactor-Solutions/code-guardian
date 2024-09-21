@@ -90,6 +90,7 @@ jobs:
       - name: Echo file changes
         run: |
           echo Changed files: ${{ steps.get_file_changes.outputs.files }}
+          ${{ steps.get_file_changes.outputs.files }} > changed_files.txt
 
       - name: Run Linting for JavaScript/TypeScript (ESLint)
         if: env.lang == 'nodejs'
