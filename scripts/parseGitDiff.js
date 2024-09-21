@@ -32,7 +32,7 @@ function parseDiffFile(filePath) {
 
 // Main execution
 function main() {
-    const diffFilePath = path.join(__dirname, '../diff.txt'); // Adjust this if needed
+    const diffFilePath = path.join(__dirname, '../../diff.txt'); // Adjust this if needed
     const parsedResults = parseDiffFile(diffFilePath);
     console.log(JSON.stringify(parsedResults, null, 2)); // Output JSON
 }
