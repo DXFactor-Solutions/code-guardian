@@ -1,4 +1,0 @@
-languages:
-  nodejs:
-    system_prompt_file: "prompts/nodejs/system_prompt.txt"
-    user_prompt_file: "prompts/nodejs/user_prompt.txt"

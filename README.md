@@ -34,38 +34,15 @@ jobs:
     uses: your-org/common-repo/.github/workflows/ai-driven-review.yml@main
     with:
       azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
-      github_token: ${{ secrets.GITHUB_TOKEN }}
+      language: nodejs #optional
+      custom_prompt: 'You are a highly skilled Node.js code reviewer. Please review the following code and suggest improvements.' #optional
+  run_lint_code_review:
+    uses: DXFactor-Solutions/code-guardian/.github/workflows/code-review-linting.yml@main_new
+    with:
+      language: nodejs  #optional
 ```
 
 #### Step 2: Configure Secrets
 Add the following secrets to your project repository under Settings > Secrets and variables:
 
 - AZURE_OPENAI_API_KEY: Your Azure OpenAI API key to authenticate the API request.
-- GITHUB_TOKEN: GitHub token used to post comments on the pull request.
-
-#### Step 3: Define Language-Specific Prompts (Optional)
-You can configure language-specific prompts in your project repository by adding a config.yml file:
-```yaml
-languages:
-  nodejs:
-    system_prompt_file: "prompts/nodejs/system_prompt.txt"
-    user_prompt_file: "prompts/nodejs/user_prompt.txt"
-  python:
-    system_prompt_file: "prompts/python/system_prompt.txt"
-    user_prompt_file: "prompts/python/user_prompt.txt"
-```
-
-#### Step 4: Add Prompts
-Create the respective prompt files in your project repository, as specified in the config.yml.
-
-Example prompts/nodejs/system_prompt.txt:
-
-```txt
-You are a highly skilled Node.js code reviewer. Please review the following code and suggest improvements.
-```
-Example prompts/nodejs/user_prompt.txt:
-
-```txt
-Please analyze the changes in the following pull request and provide code review comments on best practices, performance, and code readability.
-```
-
