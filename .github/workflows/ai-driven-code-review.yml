@@ -61,7 +61,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '14'
-
+      
+      - name: List Config Directory
+        run: |
+          ls -al
+          ls -al common-repo/config
+      
       # Parse the config file and store it as base64 in the environment variable 'content'
       - name: Parse Config File
         id: config
