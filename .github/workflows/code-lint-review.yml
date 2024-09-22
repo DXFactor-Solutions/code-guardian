@@ -132,19 +132,19 @@ jobs:
           # Check if eslint, pylint, or rubocop reports exist and format them accordingly
           if [ -f eslint_report.txt ]; then
             LINT_REPORT=$(cat eslint_report.txt)
-            PR_COMMENT+="## 📦 **JavaScript/TypeScript (ESLint)**<br />"
+            PR_COMMENT+="📦 **JavaScript/TypeScript (ESLint)**<br />"
             if [ -s eslint_report.txt ]; then
-              PR_COMMENT+="\`\`\`eslint<br />$LINT_REPORT<br />\`\`\`<br />"
+              PR_COMMENT+="$LINT_REPORT"
             else
-              PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code.<br />"
+              PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code."
             fi
           fi
 
           if [ -f pylint_report.txt ]; then
             LINT_REPORT=$(cat pylint_report.txt)
-            PR_COMMENT+="## 🐍 **Python (Pylint)**<br />"
+            PR_COMMENT+="🐍 **Python (Pylint)**<br />"
             if [ -s pylint_report.txt ]; then
-              PR_COMMENT+="\`\`\`pylint<br />$LINT_REPORT<br />\`\`\`<br />"
+              PR_COMMENT+="$LINT_REPORT"
             else
               PR_COMMENT+="✅ No issues found in Python code.<br />"
             fi
@@ -152,9 +152,9 @@ jobs:
 
           if [ -f rubocop_report.txt ]; then
             LINT_REPORT=$(cat rubocop_report.txt)
-            PR_COMMENT+="## 💎 **Ruby (Rubocop)**<br />"
+            PR_COMMENT+="💎 **Ruby (Rubocop)**<br />"
             if [ -s rubocop_report.txt ]; then
-              PR_COMMENT+="\`\`\`rubocop<br />$LINT_REPORT<br />\`\`\`<br />"
+              PR_COMMENT+="$LINT_REPORT"
             else
               PR_COMMENT+="✅ No issues found in Ruby code.<br />"
             fi
