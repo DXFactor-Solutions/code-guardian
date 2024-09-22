@@ -127,14 +127,14 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Initialize the comment content with a header
-          PR_COMMENT="# 🔍 **Lint Report Summary**\\"
+          PR_COMMENT="# 🔍 **Lint Report Summary**<br/>"
 
           # Check if eslint, pylint, or rubocop reports exist and format them accordingly
           if [ -f eslint_report.txt ]; then
             LINT_REPORT=$(cat eslint_report.txt)
-            PR_COMMENT+="## 📦 **JavaScript/TypeScript (ESLint)**\\"
+            PR_COMMENT+="## 📦 **JavaScript/TypeScript (ESLint)**<br/>\\"
             if [ -s eslint_report.txt ]; then
-              PR_COMMENT+="\\ $LINT_REPORT"
+              PR_COMMENT+="$LINT_REPORT"
             else
               PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code."
             fi
