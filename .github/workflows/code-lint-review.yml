@@ -30,22 +30,22 @@ jobs:
             LANGUAGE="${{ github.event.inputs.language }}"
             if [[ " ${SUPPORTED_LANGUAGES[@]} " =~ " ${LANGUAGE} " ]]; then
               echo "Detected language: $LANGUAGE"
-              echo "::set-output name=lang::$LANGUAGE"
+              echo "lang=$LANGUAGE" >> $GITHUB_OUTPUT
             else
-              echo "::set-output name=lang::unknown"
+              echo "lang=unknown" >> $GITHUB_OUTPUT
             fi
           else
             if [ -f package.json ]; then
               echo "Detected language: nodejs"
-              echo "::set-output name=lang::nodejs"
+              echo "lang=nodejs" >> $GITHUB_OUTPUT
             elif [ -f requirements.txt ]; then
               echo "Detected language: python"
-              echo "::set-output name=lang::python"
+              echo "lang=python" >> $GITHUB_OUTPUT
             elif [ -f Gemfile ]; then
               echo "Detected language: ruby"
-              echo "::set-output name=lang::ruby"
+              echo "lang=ruby" >> $GITHUB_OUTPUT
             else
-              echo "::set-output name=lang::unknown"
+              echo "lang=unknown" >> $GITHUB_OUTPUT
             fi
           fi
 
@@ -125,6 +125,9 @@ jobs:
       - name: Format and Post Lint Report to PR Comment
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              - name: Format and Post Lint Report to PR Comment
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Initialize the comment content with a header
           PR_COMMENT="# 🔍 **Lint Report Summary**\n\n"
@@ -134,7 +137,7 @@ jobs:
             LINT_REPORT=$(cat eslint_report.txt)
             PR_COMMENT+="## 📦 **JavaScript/TypeScript (ESLint)**\n\n"
             if [ -s eslint_report.txt ]; then
-              PR_COMMENT+="\`\`\`eslint\n$LINT_REPORT\n\`\`\`\n"
+              PR_COMMENT+="\n\`\`\`eslint\n$LINT_REPORT\n\`\`\`\n"
             else
               PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code.\n\n"
             fi
@@ -144,7 +147,7 @@ jobs:
             LINT_REPORT=$(cat pylint_report.txt)
             PR_COMMENT+="## 🐍 **Python (Pylint)**\n\n"
             if [ -s pylint_report.txt ]; then
-              PR_COMMENT+="\`\`\`pylint\n$LINT_REPORT\n\`\`\`\n"
+              PR_COMMENT+="\n\`\`\`pylint\n$LINT_REPORT\n\`\`\`\n"
             else
               PR_COMMENT+="✅ No issues found in Python code.\n\n"
             fi
@@ -154,13 +157,13 @@ jobs:
             LINT_REPORT=$(cat rubocop_report.txt)
             PR_COMMENT+="## 💎 **Ruby (Rubocop)**\n\n"
             if [ -s rubocop_report.txt ]; then
-              PR_COMMENT+="\`\`\`rubocop\n$LINT_REPORT\n\`\`\`\n"
+              PR_COMMENT+="\n\`\`\`rubocop\n$LINT_REPORT\n\`\`\`\n"
             else
               PR_COMMENT+="✅ No issues found in Ruby code.\n\n"
             fi
           fi
 
-          # If no lint reports found
+          # If no lint reports are found
           if [ ! -f eslint_report.txt ] && [ ! -f pylint_report.txt ] && [ ! -f rubocop_report.txt ]; then
             PR_COMMENT+="✅ No linting errors found in the changed files.\n\n"
           fi
