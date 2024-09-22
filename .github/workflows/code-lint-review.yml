@@ -80,7 +80,7 @@ jobs:
           yarn install
           echo "Logging changed files..."
           echo "${{ steps.get_file_changes.outputs.files }}"
-          yarn eslint ${{ steps.get_file_changes.outputs.files }} > eslint_report.txt || true
+          yarn eslint --f stylish ${{ steps.get_file_changes.outputs.files }} > eslint_report.txt || true
           echo "Logging eslint report..."
           cat eslint_report.txt
         continue-on-error: true
@@ -134,7 +134,7 @@ jobs:
             LINT_REPORT=$(cat eslint_report.txt)
             PR_COMMENT+="📦 **JavaScript/TypeScript (ESLint)**<br />"
             if [ -s eslint_report.txt ]; then
-              PR_COMMENT+="$LINT_REPORT"
+              PR_COMMENT+="\`\`\`eslint $LINT_REPORT \`\`\`"
             else
               PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code."
             fi
