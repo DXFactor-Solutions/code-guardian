@@ -45,10 +45,6 @@ jobs:
           repository: DXFactor-Solutions/code-guardian
           path: common-repo
 
-      - name: Clean Up yq Cache
-        run: |
-          rm -rf ~/.config/yq
-
       - name: Install yq (YAML Processor) and jq
         run: |
           sudo apt-get update
@@ -120,6 +116,11 @@ jobs:
         run: |
           echo "Unsupported language detected. Skipping code review."
           exit 1
+
+      - name: List Config Directory
+        run: |
+          ls -al common-repo/config
+          cat common-repo/config/config.yaml
 
       - name: Retrieve Language-Specific Prompts
         run: |
