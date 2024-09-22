@@ -32,6 +32,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0  # Fetch all history for all branches
 
       - name: Checkout action repository
         uses: actions/checkout@v4.1.1
@@ -146,7 +148,7 @@ jobs:
           max_buffer_size: 10000000
       
       - name: Get Git Log and Save to File
-        run: git log --pretty=format:"%s" origin/develop..HEAD > commit_messages.txt
+        run: git log --no-merges --pretty=format:"%s" origin/${{ github.event.pull_request.base.ref }}..HEAD > commit_messages.txt
     
       - name: Read Commit Messages from File
         id: git_log
