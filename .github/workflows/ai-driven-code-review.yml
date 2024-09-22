@@ -45,6 +45,10 @@ jobs:
           repository: DXFactor-Solutions/code-guardian
           path: common-repo
 
+      - name: Clean Up yq Cache
+        run: |
+          rm -rf ~/.config/yq
+
       - name: Install yq (YAML Processor) and jq
         run: |
           sudo apt-get update
