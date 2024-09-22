@@ -149,7 +149,7 @@ jobs:
       
       - name: Get Git Log and Save to File
         run: git log --no-merges --pretty=format:"%s" origin/${{ github.event.pull_request.base.ref }}..HEAD > commit_messages.txt
-        
+
       - name: Read Commit Messages and Diff from Files
         id: combined_prompt
         run: |
@@ -157,14 +157,21 @@ jobs:
           DIFF=$(cat diff.txt)
 
           # Create a combined user prompt that includes both the commit messages and code diff
+          echo "### Commit Message History:"
           echo "### Commit Message History:" > combined_prompt.txt
+          echo "$GIT_LOG"
           echo "$GIT_LOG" >> combined_prompt.txt
+          echo ""
           echo "" >> combined_prompt.txt
+          echo "### Code Diff:"
           echo "### Code Diff:" >> combined_prompt.txt
+          echo "$DIFF"
           echo "$DIFF" >> combined_prompt.txt
 
+          cat combined_prompt.txt
+
           # Save combined prompt for later use
-          echo "git_log_and_diff_output=$(cat combined_prompt.txt)" >> $GITHUB_ENV
+          # echo "git_log_and_diff_output=$(cat combined_prompt.txt)" >> $GITHUB_ENV
         
       - name: Send Azure OpenAI API Request for Code Review
         id: ai_review
