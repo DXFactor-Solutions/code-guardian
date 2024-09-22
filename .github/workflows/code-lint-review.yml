@@ -125,9 +125,6 @@ jobs:
       - name: Format and Post Lint Report to PR Comment
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              - name: Format and Post Lint Report to PR Comment
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Initialize the comment content with a header
           PR_COMMENT="# 🔍 **Lint Report Summary**\n\n"
