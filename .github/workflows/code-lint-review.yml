@@ -122,52 +122,48 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gh
 
-      - name: Format and Post Lint Report to PR Comment
+     - name: Format and Post Lint Report to PR Comment
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          - name: Format and Post Lint Report to PR Comment
-  env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        # Initialize the comment content with a header
-        PR_COMMENT="# 🔍 **Lint Report Summary**\n"
+            run: |
+              # Initialize the comment content with a header
+              PR_COMMENT="# 🔍 **Lint Report Summary**\n"
 
-        # Check if eslint, pylint, or rubocop reports exist and format them accordingly
-        if [ -f eslint_report.txt ]; then
-          LINT_REPORT=$(cat eslint_report.txt)
-          PR_COMMENT+="## 📦 **JavaScript/TypeScript (ESLint)**\n\n"
-          if [ -s eslint_report.txt ]; then
-            PR_COMMENT+="\`\`\`eslint\n$LINT_REPORT\n\`\`\`\n"
-          else
-            PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code.\n"
-          fi
-        fi
+              # Check if eslint, pylint, or rubocop reports exist and format them accordingly
+              if [ -f eslint_report.txt ]; then
+                LINT_REPORT=$(cat eslint_report.txt)
+                PR_COMMENT+="## 📦 **JavaScript/TypeScript (ESLint)**\n\n"
+                if [ -s eslint_report.txt ]; then
+                  PR_COMMENT+="\`\`\`eslint\n$LINT_REPORT\n\`\`\`\n"
+                else
+                  PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code.\n"
+                fi
+              fi
 
-        if [ -f pylint_report.txt ]; then
-          LINT_REPORT=$(cat pylint_report.txt)
-          PR_COMMENT+="## 🐍 **Python (Pylint)**\n\n"
-          if [ -s pylint_report.txt ]; then
-            PR_COMMENT+="\`\`\`pylint\n$LINT_REPORT\n\`\`\`\n"
-          else
-            PR_COMMENT+="✅ No issues found in Python code.\n"
-          fi
-        fi
+              if [ -f pylint_report.txt ]; then
+                LINT_REPORT=$(cat pylint_report.txt)
+                PR_COMMENT+="## 🐍 **Python (Pylint)**\n\n"
+                if [ -s pylint_report.txt ]; then
+                  PR_COMMENT+="\`\`\`pylint\n$LINT_REPORT\n\`\`\`\n"
+                else
+                  PR_COMMENT+="✅ No issues found in Python code.\n"
+                fi
+              fi
 
-        if [ -f rubocop_report.txt ]; then
-          LINT_REPORT=$(cat rubocop_report.txt)
-          PR_COMMENT+="## 💎 **Ruby (Rubocop)**\n\n"
-          if [ -s rubocop_report.txt ]; then
-            PR_COMMENT+="\`\`\`rubocop\n$LINT_REPORT\n\`\`\`\n"
-          else
-            PR_COMMENT+="✅ No issues found in Ruby code.\n"
-          fi
-        fi
+              if [ -f rubocop_report.txt ]; then
+                LINT_REPORT=$(cat rubocop_report.txt)
+                PR_COMMENT+="## 💎 **Ruby (Rubocop)**\n\n"
+                if [ -s rubocop_report.txt ]; then
+                  PR_COMMENT+="\`\`\`rubocop\n$LINT_REPORT\n\`\`\`\n"
+                else
+                  PR_COMMENT+="✅ No issues found in Ruby code.\n"
+                fi
+              fi
 
-        # If no lint reports are found
-        if [ ! -f eslint_report.txt ] && [ ! -f pylint_report.txt ] && [ ! -f rubocop_report.txt ]; then
-          PR_COMMENT+="✅ No linting errors found in the changed files.\n"
-        fi
+              # If no lint reports are found
+              if [ ! -f eslint_report.txt ] && [ ! -f pylint_report.txt ] && [ ! -f rubocop_report.txt ]; then
+                PR_COMMENT+="✅ No linting errors found in the changed files.\n"
+              fi
 
-        # Post the comment to the PR
-        gh pr comment ${{ github.event.pull_request.number }} --body "$PR_COMMENT"
+              # Post the comment to the PR
+              gh pr comment ${{ github.event.pull_request.number }} --body "$PR_COMMENT"
