@@ -1,3 +1,7 @@
 languages:
   nodejs:
     prompt_file: "prompts/nodejs/prompt.txt"
+  python:
+    prompt_file: "prompts/python/prompt.txt"
+  ruby:
+    prompt_file: "prompts/ruby/prompt.txt"
