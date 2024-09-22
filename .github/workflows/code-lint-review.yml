@@ -13,13 +13,11 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write   # Allows writing comments to the pull request
+  pull-requests: write
 
 jobs:
-  detect_language:
+  lint_review:
     runs-on: ubuntu-latest
-    outputs:
-      lang: ${{ steps.set_lang.outputs.lang }}  # Set the detected language as output
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -31,20 +29,20 @@ jobs:
           if [ -n "${{ github.event.inputs.language }}" ]; then
             LANGUAGE="${{ github.event.inputs.language }}"
             if [[ " ${SUPPORTED_LANGUAGES[@]} " =~ " ${LANGUAGE} " ]]; then
-              echo "Detected language4: $LANGUAGE"
+              echo "Detected language: $LANGUAGE"
               echo "::set-output name=lang::$LANGUAGE"
             else
               echo "::set-output name=lang::unknown"
             fi
           else
             if [ -f package.json ]; then
-              echo "Detected language1: nodejs"
+              echo "Detected language: nodejs"
               echo "::set-output name=lang::nodejs"
             elif [ -f requirements.txt ]; then
-              echo "Detected language2: python"
+              echo "Detected language: python"
               echo "::set-output name=lang::python"
             elif [ -f Gemfile ]; then
-              echo "Detected language3: ruby"
+              echo "Detected language: ruby"
               echo "::set-output name=lang::ruby"
             else
               echo "::set-output name=lang::unknown"
@@ -57,16 +55,9 @@ jobs:
           echo "Unsupported language detected. Exiting..."
           exit 1
 
-  lint:
-    needs: detect_language
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4.1.1
-
       - name: Install Yarn
-        run: |
-          npm install -g yarn
+        if: steps.set_lang.outputs.lang == 'nodejs'
+        run: npm install -g yarn
 
       - name: Fetch base branch
         run: |
@@ -84,25 +75,25 @@ jobs:
           echo "Changed files: ${{ steps.get_file_changes.outputs.files }}"
 
       - name: Run Linting for JavaScript/TypeScript (ESLint)
-        if: needs.detect_language.outputs.lang == 'nodejs'
+        if: steps.set_lang.outputs.lang == 'nodejs'
         run: |
           yarn install
-          echo "logging changed files.."
+          echo "Logging changed files..."
           echo "${{ steps.get_file_changes.outputs.files }}"
           yarn eslint ${{ steps.get_file_changes.outputs.files }} > eslint_report.txt || true
-          echo "logging eslint report.."
+          echo "Logging eslint report..."
           cat eslint_report.txt
         continue-on-error: true
 
       - name: Run Linting for Python (Pylint)
-        if: needs.detect_language.outputs.lang == 'python'  # Use output from the previous job
+        if: steps.set_lang.outputs.lang == 'python'
         run: |
           pip install pylint
           pylint ${{ steps.get_file_changes.outputs.files }} > pylint_report.txt || true
         continue-on-error: true
 
       - name: Run Linting for Ruby (Rubocop)
-        if: needs.detect_language.outputs.lang == 'ruby'  # Use output from the previous job
+        if: steps.set_lang.outputs.lang == 'ruby'
         run: |
           gem install rubocop
           rubocop ${{ steps.get_file_changes.outputs.files }} > rubocop_report.txt || true
@@ -112,7 +103,7 @@ jobs:
         id: capture_report
         run: |
           if [ -f eslint_report.txt ]; then
-            echo "logging eslint output => "
+            echo "Logging eslint output..."
             cat eslint_report.txt
             LINT_OUTPUT=$(cat eslint_report.txt)
           elif [ -f pylint_report.txt ]; then
@@ -123,7 +114,7 @@ jobs:
             LINT_OUTPUT="No linting errors found in the changed files."
           fi
           echo "$LINT_OUTPUT" > lint_report.txt
-          echo "logging lint output => "
+          echo "Logging lint output..."
           cat lint_report.txt
 
       - name: Install GitHub CLI (gh)
@@ -131,13 +122,49 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gh
 
-      - name: Read and Post Lint Report to PR Comment
+      - name: Format and Post Lint Report to PR Comment
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -f lint_report.txt ]; then
-            LINT_REPORT=$(cat lint_report.txt)
-            gh pr comment ${{ github.event.pull_request.number }} --body "$LINT_REPORT"
-          else
-            echo "No lint report found."
+          # Initialize the comment content with a header
+          PR_COMMENT="# 🔍 **Lint Report Summary**\n\n"
+
+          # Check if eslint, pylint, or rubocop reports exist and format them accordingly
+          if [ -f eslint_report.txt ]; then
+            LINT_REPORT=$(cat eslint_report.txt)
+            PR_COMMENT+="## 📦 **JavaScript/TypeScript (ESLint)**\n\n"
+            if [ -s eslint_report.txt ]; then
+              PR_COMMENT+="\`\`\`eslint\n$LINT_REPORT\n\`\`\`\n"
+            else
+              PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code.\n\n"
+            fi
           fi
+
+          if [ -f pylint_report.txt ]; then
+            LINT_REPORT=$(cat pylint_report.txt)
+            PR_COMMENT+="## 🐍 **Python (Pylint)**\n\n"
+            if [ -s pylint_report.txt ]; then
+              PR_COMMENT+="\`\`\`pylint\n$LINT_REPORT\n\`\`\`\n"
+            else
+              PR_COMMENT+="✅ No issues found in Python code.\n\n"
+            fi
+          fi
+
+          if [ -f rubocop_report.txt ]; then
+            LINT_REPORT=$(cat rubocop_report.txt)
+            PR_COMMENT+="## 💎 **Ruby (Rubocop)**\n\n"
+            if [ -s rubocop_report.txt ]; then
+              PR_COMMENT+="\`\`\`rubocop\n$LINT_REPORT\n\`\`\`\n"
+            else
+              PR_COMMENT+="✅ No issues found in Ruby code.\n\n"
+            fi
+          fi
+
+          # If no lint reports found
+          if [ ! -f eslint_report.txt ] && [ ! -f pylint_report.txt ] && [ ! -f rubocop_report.txt ]; then
+            PR_COMMENT+="✅ No linting errors found in the changed files.\n\n"
+          fi
+
+          # Post the comment to the PR
+          echo "$PR_COMMENT"
+          gh pr comment ${{ github.event.pull_request.number }} --body "$PR_COMMENT"
