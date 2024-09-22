@@ -127,42 +127,42 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Initialize the comment content with a header
-          PR_COMMENT="# 🔍 **Lint Report Summary**\n"
+          PR_COMMENT="# 🔍 **Lint Report Summary**\"
 
           # Check if eslint, pylint, or rubocop reports exist and format them accordingly
           if [ -f eslint_report.txt ]; then
             LINT_REPORT=$(cat eslint_report.txt)
-            PR_COMMENT+="## 📦 **JavaScript/TypeScript (ESLint)**\n\n"
+            PR_COMMENT+="## 📦 **JavaScript/TypeScript (ESLint)**\"
             if [ -s eslint_report.txt ]; then
-              PR_COMMENT+="\`\`\`eslint\n$LINT_REPORT\n\`\`\`\n"
+              PR_COMMENT+="\`\`\`eslint $LINT_REPORT \`\`\`"
             else
-              PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code.\n"
+              PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code.\"
             fi
           fi
 
           if [ -f pylint_report.txt ]; then
             LINT_REPORT=$(cat pylint_report.txt)
-            PR_COMMENT+="## 🐍 **Python (Pylint)**\n\n"
+            PR_COMMENT+="## 🐍 **Python (Pylint)**\"
             if [ -s pylint_report.txt ]; then
-              PR_COMMENT+="\`\`\`pylint\n$LINT_REPORT\n\`\`\`\n"
+              PR_COMMENT+="\`\`\`pylint $LINT_REPORT\`\`\`\"
             else
-              PR_COMMENT+="✅ No issues found in Python code.\n"
+              PR_COMMENT+="✅ No issues found in Python code.\"
             fi
           fi
 
           if [ -f rubocop_report.txt ]; then
             LINT_REPORT=$(cat rubocop_report.txt)
-            PR_COMMENT+="## 💎 **Ruby (Rubocop)**\n\n"
+            PR_COMMENT+="## 💎 **Ruby (Rubocop)**\"
             if [ -s rubocop_report.txt ]; then
-              PR_COMMENT+="\`\`\`rubocop\n$LINT_REPORT\n\`\`\`\n"
+              PR_COMMENT+="\`\`\`rubocop $LINT_REPORT\`\`\`\"
             else
-              PR_COMMENT+="✅ No issues found in Ruby code.\n"
+              PR_COMMENT+="✅ No issues found in Ruby code.\"
             fi
           fi
 
           # If no lint reports are found
           if [ ! -f eslint_report.txt ] && [ ! -f pylint_report.txt ] && [ ! -f rubocop_report.txt ]; then
-            PR_COMMENT+="✅ No linting errors found in the changed files.\n"
+            PR_COMMENT+="✅ No linting errors found in the changed files.\"
           fi
 
           # Post the comment to the PR
