@@ -124,48 +124,47 @@ jobs:
 
       - name: Format and Post Lint Report to PR Comment
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Initialize the comment content with a header
-          PR_COMMENT="# 🔍 **Lint Report Summary**\n\n"
+          PR_COMMENT="# 🔍 **Lint Report Summary**\n"
 
           # Check if eslint, pylint, or rubocop reports exist and format them accordingly
           if [ -f eslint_report.txt ]; then
-            # Ensure newlines are properly formatted for GitHub comments
-            LINT_REPORT=$(cat eslint_report.txt | sed ':a;N;$!ba;s/\r//g')
-            PR_COMMENT+="## 📦 **JavaScript/TypeScript (ESLint)**\n\n"
+            LINT_REPORT=$(cat eslint_report.txt)
+            PR_COMMENT+="## 📦 **JavaScript/TypeScript (ESLint)**\n"
             if [ -s eslint_report.txt ]; then
-              PR_COMMENT+="\n\`\`\`eslint\n$LINT_REPORT\n\`\`\`\n"
+              PR_COMMENT+="\n\`\`\`eslint\n$LINT_REPORT\`\`\`\n"
             else
-              PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code.\n\n"
+              PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code.\n"
             fi
           fi
 
           if [ -f pylint_report.txt ]; then
-            LINT_REPORT=$(cat pylint_report.txt | sed ':a;N;$!ba;s/\r//g')
-            PR_COMMENT+="## 🐍 **Python (Pylint)**\n\n"
+            LINT_REPORT=$(cat pylint_report.txt)
+            PR_COMMENT+="## 🐍 **Python (Pylint)**\n"
             if [ -s pylint_report.txt ]; then
-              PR_COMMENT+="\n\`\`\`pylint\n$LINT_REPORT\n\`\`\`\n"
+              PR_COMMENT+="\n\`\`\`pylint\n$LINT_REPORT\`\`\`\n"
             else
-              PR_COMMENT+="✅ No issues found in Python code.\n\n"
+              PR_COMMENT+="✅ No issues found in Python code.\n"
             fi
           fi
 
           if [ -f rubocop_report.txt ]; then
-            LINT_REPORT=$(cat rubocop_report.txt | sed ':a;N;$!ba;s/\r//g')
-            PR_COMMENT+="## 💎 **Ruby (Rubocop)**\n\n"
+            LINT_REPORT=$(cat rubocop_report.txt)
+            PR_COMMENT+="## 💎 **Ruby (Rubocop)**\n"
             if [ -s rubocop_report.txt ]; then
-              PR_COMMENT+="\n\`\`\`rubocop\n$LINT_REPORT\n\`\`\`\n"
+              PR_COMMENT+="\n\`\`\`rubocop\n$LINT_REPORT\`\`\`\n"
             else
-              PR_COMMENT+="✅ No issues found in Ruby code.\n\n"
+              PR_COMMENT+="✅ No issues found in Ruby code.\n"
             fi
           fi
 
           # If no lint reports are found
           if [ ! -f eslint_report.txt ] && [ ! -f pylint_report.txt ] && [ ! -f rubocop_report.txt ]; then
-            PR_COMMENT+="✅ No linting errors found in the changed files.\n\n"
+            PR_COMMENT+="✅ No linting errors found in the changed files.\n"
           fi
 
           # Post the comment to the PR
-          echo "$PR_COMMENT"
+          echo -e "$PR_COMMENT"  # Use -e to enable interpretation of backslash escapes
           gh pr comment ${{ github.event.pull_request.number }} --body "$PR_COMMENT"
