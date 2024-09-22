@@ -184,6 +184,11 @@ jobs:
           SYSTEM_PROMPT=$(cat system_prompt.txt)
           USER_PROMPT=$(cat combined_prompt.txt)
 
+          # Append custom prompt if provided
+          if [ -n "${{ inputs.custom_prompt }}" ]; then
+            USER_PROMPT="$USER_PROMPT\n\n ### Project Specific Promot: ${{ inputs.custom_prompt }}"
+          fi
+
           # Escape SYSTEM_PROMPT and USER_PROMPT to ensure they're valid JSON
           escaped_system_prompt=$(echo "$SYSTEM_PROMPT" | jq -s -R -r @json)
           escaped_user_prompt=$(echo "$USER_PROMPT" | jq -s -R -r @json)
