@@ -132,7 +132,7 @@ jobs:
           # Check if eslint, pylint, or rubocop reports exist and format them accordingly
           if [ -f eslint_report.txt ]; then
             LINT_REPORT=$(cat eslint_report.txt)
-            PR_COMMENT+="📦 **JavaScript/TypeScript (ESLint)**<br />"
+            PR_COMMENT+="📦 **JavaScript/TypeScript (ESLint)**<br />\"
             if [ -s eslint_report.txt ]; then
               PR_COMMENT+="\`\`\`eslint $LINT_REPORT \`\`\`"
             else
