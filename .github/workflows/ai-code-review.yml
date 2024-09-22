@@ -81,26 +81,34 @@ jobs:
           fi
 
       - name: Detect Programming Language
-        id: detect_lang
+        id: set_lang
         run: |
-          if [ -n "$LANGUAGE" ]; then
-            # List of supported languages
-            SUPPORTED_LANGUAGES=("nodejs" "python" "ruby")
+          SUPPORTED_LANGUAGES=("nodejs" "python" "ruby")
+          if [ -n "${{ github.event.inputs.language }}" ]; then
+            LANGUAGE="${{ github.event.inputs.language }}"
             if [[ " ${SUPPORTED_LANGUAGES[@]} " =~ " ${LANGUAGE} " ]]; then
-              echo "lang=$LANGUAGE" >> $GITHUB_ENV
+              echo "Detected language: $LANGUAGE"
+              echo "lang=$LANGUAGE" >> $GITHUB_OUTPUT
             else
-              echo "lang=unknown" >> $GITHUB_ENV
+              echo "lang=unknown" >> $GITHUB_OUTPUT
             fi
           else
             if [ -f package.json ]; then
-              echo "lang=nodejs" >> $GITHUB_ENV
+              echo "Detected language: nodejs"
+              echo "lang=nodejs" >> $GITHUB_OUTPUT
+            elif [ -f requirements.txt ]; then
+              echo "Detected language: python"
+              echo "lang=python" >> $GITHUB_OUTPUT
+            elif [ -f Gemfile ]; then
+              echo "Detected language: ruby"
+              echo "lang=ruby" >> $GITHUB_OUTPUT
             else
-              echo "lang=unknown" >> $GITHUB_ENV
+              echo "lang=unknown" >> $GITHUB_OUTPUT
             fi
           fi
 
       - name: Fail if Language Not Supported
-        if: env.lang == 'unknown'
+        if: steps.set_lang.outputs.lang == 'unknown'
         run: |
           echo "Unsupported language detected. Skipping code review."
           exit 1
@@ -110,7 +118,7 @@ jobs:
           echo "Decoded config contents:"
           cat decoded_config.yaml
 
-          LANG=${{ env.lang }}
+          LANG=${{ steps.set_lang.outputs.lang }}
 
           echo "Using language: $LANG"
           SYSTEM_PROMPT_FILE=$(yq e ".languages.${LANG}.system_prompt_file" decoded_config.yaml)
