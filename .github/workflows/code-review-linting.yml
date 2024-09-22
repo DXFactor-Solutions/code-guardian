@@ -16,7 +16,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  lint_review:
+  lint_and_review:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -55,7 +55,7 @@ jobs:
           echo "Unsupported language detected. Exiting..."
           exit 1
 
-      - name: Install Yarn
+      - name: Install Yarn for Node.js
         if: steps.set_lang.outputs.lang == 'nodejs'
         run: npm install -g yarn
 
@@ -99,7 +99,7 @@ jobs:
           rubocop ${{ steps.get_file_changes.outputs.files }} > rubocop_report.txt || true
         continue-on-error: true
 
-      - name: Capture Lint Report
+      - name: Capture and Log Lint Report
         id: capture_report
         run: |
           if [ -f eslint_report.txt ]; then

@@ -23,7 +23,7 @@ permissions:
   pull-requests: write   # Allows writing comments to the pull request
 
 jobs:
-  code_review:
+  ai_code_review:
     runs-on: ubuntu-latest
     env:
       AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
@@ -113,7 +113,7 @@ jobs:
           echo "Unsupported language detected. Skipping code review."
           exit 1
 
-      - name: Get Language-Specific Prompt
+      - name: Retrieve Language-Specific Prompts
         run: |
           echo "Decoded config contents:"
           cat decoded_config.yaml
@@ -121,23 +121,14 @@ jobs:
           LANG=${{ steps.set_lang.outputs.lang }}
 
           echo "Using language: $LANG"
-          SYSTEM_PROMPT_FILE=$(yq e ".languages.${LANG}.system_prompt_file" decoded_config.yaml)
-          USER_PROMPT_FILE=$(yq e ".languages.${LANG}.user_prompt_file" decoded_config.yaml)
+          PROMPT_FILE=$(yq e ".languages.${LANG}.prompt_file" decoded_config.yaml)
 
-          echo "System prompt file path: $SYSTEM_PROMPT_FILE"
-          echo "User prompt file path: $USER_PROMPT_FILE"
+          echo "System prompt file path: $PROMPT_FILE"
 
-          if [ -f "common-repo/$SYSTEM_PROMPT_FILE" ]; then
-            cat "common-repo/$SYSTEM_PROMPT_FILE" > system_prompt.txt
+          if [ -f "common-repo/$PROMPT_FILE" ]; then
+            cat "common-repo/$PROMPT_FILE" > system_prompt.txt
           else
-            echo "System prompt file not found: $SYSTEM_PROMPT_FILE"
-            exit 1
-          fi
-
-          if [ -f "common-repo/$USER_PROMPT_FILE" ]; then
-            cat "common-repo/$USER_PROMPT_FILE" > user_prompt.txt
-          else
-            echo "User prompt file not found: $USER_PROMPT_FILE"
+            echo "System prompt file not found: $PROMPT_FILE"
             exit 1
           fi
 
