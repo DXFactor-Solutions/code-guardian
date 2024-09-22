@@ -149,128 +149,55 @@ jobs:
         id: ai_review
         env:
           AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Read the parsed diff JSON file
-          changes=$(cat parsed_diff.json)
+          DIFF=$(cat ${{ steps.git-diff.outputs.raw-diff-path }})
+          SYSTEM_PROMPT=$(cat system_prompt.txt)
+          USER_PROMPT=$(cat user_prompt.txt)
 
-          # Print the content for debugging
-          echo "Content of parsed_diff.json:"
-          echo "$changes"
+          # Escape DIFF to ensure it's valid JSON
+          escaped_code=$(echo "$DIFF" | jq -s -R -r @json)
+          # Escape SYSTEM_PROMPT and USER_PROMPT to ensure they're valid JSON
+          escaped_system_prompt=$(echo "$SYSTEM_PROMPT" | jq -s -R -r @json)
+          escaped_user_prompt=$(echo "$USER_PROMPT" | jq -s -R -r @json)
 
-          # Check if the JSON is valid
-          echo "$changes" | jq . >/dev/null 2>&1
-          if [ $? -ne 0 ]; then
-            echo "Error: parsed_diff.json is not valid JSON."
+          echo "Escaped code for request: $escaped_code"
+
+          # Construct the JSON payload with escaped content
+          request_payload="{
+            \"messages\": [
+              { \"role\": \"system\", \"content\": $escaped_system_prompt },
+              { \"role\": \"user\", \"content\": $escaped_code }
+            ],
+            \"temperature\": 0,
+            \"top_p\": 1,
+            \"n\": 1,
+            \"max_tokens\": 1500
+          }"
+
+          echo "request_payload: $request_payload"
+
+          RESPONSE=$(curl -s -X POST https://code-guardians.openai.azure.com/openai/deployments/code-guardians-gpt-4o/chat/completions?api-version=2024-06-01 \
+            -H "Content-Type: application/json" \
+            -H "api-key: $AZURE_OPENAI_API_KEY" \
+            -d "$request_payload")
+
+          echo "Response from GPT => $RESPONSE"
+
+          if [[ -z "$RESPONSE" || "$RESPONSE" == "null" ]]; then
+            echo "Azure OpenAI response was empty. Exiting..."
             exit 1
           fi
 
-          # Loop through each change and send it to OpenAI
-          for change in $(echo "${changes}" | jq -c '.[]'); do
-            file=$(echo "$change" | jq -r '.file')
-            line_number=$(echo "$change" | jq -r '.line')
-            changed_code=$(echo "$change" | jq -r '.code')
+          # Extract the code review suggestions from the response
+          code_review_suggestions=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
 
-            # Escape the code for OpenAI API
-            escaped_code=$(echo "$changed_code" | jq -s -R -r @json)
+          # Save the suggestions to a file
+          echo "$code_review_suggestions" > code_suggestions.txt
 
-            # Construct the request payload
-            request_payload="{
-              \"messages\": [
-                { \"role\": \"system\", \"content\": $(cat system_prompt.txt | jq -s -R -r @json) },
-                { \"role\": \"user\", \"content\": $escaped_code }
-              ],
-              \"temperature\": 0,
-              \"top_p\": 1,
-              \"n\": 1,
-              \"max_tokens\": 1500
-            }"
+      - name: Add AI Comments to PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RESPONSE=$(cat code_suggestions.txt)
 
-            RESPONSE=$(curl -s -X POST https://code-guardians.openai.azure.com/openai/deployments/code-guardians-gpt-4o/chat/completions?api-version=2024-06-01 \
-              -H "Content-Type: application/json" \
-              -H "api-key: $AZURE_OPENAI_API_KEY" \
-              -d "$request_payload")
-
-            # Extract the review comment from the response
-            review_comment=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
-
-            echo $review_comment
-
-            # Extract repository and pull request number
-            REPO=${{ github.repository }}    # Sets the repo as "owner/repo"
-            PR_NUMBER=${{ github.event.pull_request.number }}  # Gets the PR number dynamically
-
-            # GitHub API URL for fetching PR comments
-            API_URL="https://api.github.com/repos/$REPO/pulls/$PR_NUMBER/comments"
-
-            # GitHub API call to add the comment at a specific line
-            curl -s -X POST "$API_URL" \
-              -H "Authorization: Bearer $GITHUB_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              -d "{
-                \"body\": \"$review_comment\",
-                \"commit_id\": \"$(git rev-parse HEAD)\",
-                \"path\": \"$file\",
-                \"line\": $line_number,
-                \"side\": \"RIGHT\"
-              }"
-              
-          done
-
-      # - name: Send Azure OpenAI API Request for Code Review
-      #   id: ai_review
-      #   env:
-      #     AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
-      #   run: |
-      #     DIFF=$(cat ${{ steps.git-diff.outputs.raw-diff-path }})
-      #     SYSTEM_PROMPT=$(cat system_prompt.txt)
-      #     USER_PROMPT=$(cat user_prompt.txt)
-
-      #     # Escape DIFF to ensure it's valid JSON
-      #     escaped_code=$(echo "$DIFF" | jq -s -R -r @json)
-      #     # Escape SYSTEM_PROMPT and USER_PROMPT to ensure they're valid JSON
-      #     escaped_system_prompt=$(echo "$SYSTEM_PROMPT" | jq -s -R -r @json)
-      #     escaped_user_prompt=$(echo "$USER_PROMPT" | jq -s -R -r @json)
-
-      #     echo "Escaped code for request: $escaped_code"
-
-      #     # Construct the JSON payload with escaped content
-      #     request_payload="{
-      #       \"messages\": [
-      #         { \"role\": \"system\", \"content\": $escaped_system_prompt },
-      #         { \"role\": \"user\", \"content\": $escaped_code }
-      #       ],
-      #       \"temperature\": 0,
-      #       \"top_p\": 1,
-      #       \"n\": 1,
-      #       \"max_tokens\": 1500
-      #     }"
-
-      #     echo "request_payload: $request_payload"
-
-      #     RESPONSE=$(curl -s -X POST https://code-guardians.openai.azure.com/openai/deployments/code-guardians-gpt-4o/chat/completions?api-version=2024-06-01 \
-      #       -H "Content-Type: application/json" \
-      #       -H "api-key: $AZURE_OPENAI_API_KEY" \
-      #       -d "$request_payload")
-
-      #     echo "Response from GPT => $RESPONSE"
-
-      #     if [[ -z "$RESPONSE" || "$RESPONSE" == "null" ]]; then
-      #       echo "Azure OpenAI response was empty. Exiting..."
-      #       exit 1
-      #     fi
-
-      #     # Extract the code review suggestions from the response
-      #     code_review_suggestions=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
-
-      #     # Save the suggestions to a file
-      #     echo "$code_review_suggestions" > code_suggestions.txt
-
-      # - name: Add AI Comments to PR
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   run: |
-      #     RESPONSE=$(cat code_suggestions.txt)
-
-      #     gh pr comment ${{ github.event.pull_request.number }} --body "$RESPONSE"
+          gh pr comment ${{ github.event.pull_request.number }} --body "$RESPONSE"
