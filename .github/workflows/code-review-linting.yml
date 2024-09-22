@@ -127,12 +127,12 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Initialize the comment content with a header
-          PR_COMMENT="# 🔍 **Lint Report Summary**<br/>"
+          PR_COMMENT="# 🔍 **Lint Report Summary**"
 
           # Check if eslint, pylint, or rubocop reports exist and format them accordingly
           if [ -f eslint_report.txt ]; then
             LINT_REPORT=$(cat eslint_report.txt)
-            PR_COMMENT+="📦 **JavaScript/TypeScript (ESLint)**<br/>"
+            PR_COMMENT+="- 📦 **JavaScript/TypeScript (ESLint)**<br/>"
             if [ -s eslint_report.txt ]; then
               PR_COMMENT+="$LINT_REPORT"
             else
@@ -142,7 +142,7 @@ jobs:
 
           if [ -f pylint_report.txt ]; then
             LINT_REPORT=$(cat pylint_report.txt)
-            PR_COMMENT+="🐍 **Python (Pylint)**<br />"
+            PR_COMMENT+="- 🐍 **Python (Pylint)**<br />"
             if [ -s pylint_report.txt ]; then
               PR_COMMENT+="$LINT_REPORT"
             else
@@ -152,7 +152,7 @@ jobs:
 
           if [ -f rubocop_report.txt ]; then
             LINT_REPORT=$(cat rubocop_report.txt)
-            PR_COMMENT+="💎 **Ruby (Rubocop)**<br />"
+            PR_COMMENT+="- 💎 **Ruby (Rubocop)**<br />"
             if [ -s rubocop_report.txt ]; then
               PR_COMMENT+="$LINT_REPORT"
             else
