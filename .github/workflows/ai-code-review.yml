@@ -147,38 +147,41 @@ jobs:
           search_path: "."
           max_buffer_size: 10000000
       
-      - name: Get Git Log and Save to File
-        run: git log --no-merges --pretty=format:"%s" origin/${{ github.event.pull_request.base.ref }}..HEAD > commit_messages.txt
-    
-      - name: Read Commit Messages from File
-        id: git_log
+      - name: Read Commit Messages and Diff from Files
+        id: combined_prompt
         run: |
           GIT_LOG=$(cat commit_messages.txt)
-          echo "git_log_output: $GIT_LOG"
-          echo "git_log_output=$GIT_LOG" >> $GITHUB_ENV
+          DIFF=$(cat diff.txt)
+
+          # Create a combined user prompt that includes both the commit messages and code diff
+          echo "### Commit Message History:" > combined_prompt.txt
+          echo "$GIT_LOG" >> combined_prompt.txt
+          echo "" >> combined_prompt.txt
+          echo "### Code Diff:" >> combined_prompt.txt
+          echo "$DIFF" >> combined_prompt.txt
+
+          # Save combined prompt for later use
+          echo "git_log_and_diff_output=$(cat combined_prompt.txt)" >> $GITHUB_ENV
         
       - name: Send Azure OpenAI API Request for Code Review
         id: ai_review
         env:
           AZURE_OPENAI_API_KEY: ${{ inputs.azure_openai_api_key }}
         run: |
-          DIFF=$(cat ${{ steps.git-diff.outputs.raw-diff-path }})
           SYSTEM_PROMPT=$(cat system_prompt.txt)
-          USER_PROMPT=$(cat user_prompt.txt)
+          USER_PROMPT=$(cat combined_prompt.txt)
 
-          # Escape DIFF to ensure it's valid JSON
-          escaped_code=$(echo "$DIFF" | jq -s -R -r @json)
           # Escape SYSTEM_PROMPT and USER_PROMPT to ensure they're valid JSON
           escaped_system_prompt=$(echo "$SYSTEM_PROMPT" | jq -s -R -r @json)
           escaped_user_prompt=$(echo "$USER_PROMPT" | jq -s -R -r @json)
 
-          echo "Escaped code for request: $escaped_code"
+          echo "Escaped code for request: $escaped_user_prompt"
 
           # Construct the JSON payload with escaped content
           request_payload="{
             \"messages\": [
               { \"role\": \"system\", \"content\": $escaped_system_prompt },
-              { \"role\": \"user\", \"content\": $escaped_code }
+              { \"role\": \"user\", \"content\": $escaped_user_prompt }
             ],
             \"temperature\": 0,
             \"top_p\": 1,
@@ -211,5 +214,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           RESPONSE=$(cat code_suggestions.txt)
-
           gh pr comment ${{ github.event.pull_request.number }} --body "$RESPONSE"
