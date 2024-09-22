@@ -134,9 +134,7 @@ jobs:
             LINT_REPORT=$(cat eslint_report.txt)
             PR_COMMENT+="📦 **JavaScript/TypeScript (ESLint)**<br/>"
             if [ -s eslint_report.txt ]; then
-              PR_COMMENT+="\`\`\`"
               PR_COMMENT+="$LINT_REPORT"
-              PR_COMMENT+="\`\`\`"
             else
               PR_COMMENT+="✅ No issues found in JavaScript/TypeScript code."
             fi
@@ -146,9 +144,7 @@ jobs:
             LINT_REPORT=$(cat pylint_report.txt)
             PR_COMMENT+="🐍 **Python (Pylint)**<br />"
             if [ -s pylint_report.txt ]; then
-              PR_COMMENT+="\`\`\`"
               PR_COMMENT+="$LINT_REPORT"
-              PR_COMMENT+="\`\`\`"
             else
               PR_COMMENT+="✅ No issues found in Python code."
             fi
@@ -158,7 +154,6 @@ jobs:
             LINT_REPORT=$(cat rubocop_report.txt)
             PR_COMMENT+="💎 **Ruby (Rubocop)**<br />"
             if [ -s rubocop_report.txt ]; then
-              PR_COMMENT+="##                                            "
               PR_COMMENT+="$LINT_REPORT"
             else
               PR_COMMENT+="✅ No issues found in Ruby code."
