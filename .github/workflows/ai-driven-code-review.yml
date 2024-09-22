@@ -66,8 +66,8 @@ jobs:
       - name: Parse Config File
         id: config
         run: |
-          if [ -f common-repo/config/config.yaml ]; then
-            echo "content=$(cat common-repo/config/config.yaml | base64 -w 0)" >> $GITHUB_ENV
+          if [ -f common-repo/config/lan_config.yaml ]; then
+            echo "content=$(cat common-repo/config/lan_config.yaml | base64 -w 0)" >> $GITHUB_ENV
           else
             echo "Error: config.yaml not found."
             exit 1
@@ -120,7 +120,7 @@ jobs:
       - name: List Config Directory
         run: |
           ls -al common-repo/config
-          cat common-repo/config/config.yaml
+          cat common-repo/config/lan_config.yaml
 
       - name: Retrieve Language-Specific Prompts
         run: |
