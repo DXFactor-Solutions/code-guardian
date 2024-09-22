@@ -31,20 +31,20 @@ jobs:
           if [ -n "${{ github.event.inputs.language }}" ]; then
             LANGUAGE="${{ github.event.inputs.language }}"
             if [[ " ${SUPPORTED_LANGUAGES[@]} " =~ " ${LANGUAGE} " ]]; then
-              echo "Detected language: $LANGUAGE"
+              echo "Detected language4: $LANGUAGE"
               echo "::set-output name=lang::$LANGUAGE"
             else
               echo "::set-output name=lang::unknown"
             fi
           else
             if [ -f package.json ]; then
-              echo "Detected language: nodejs"
+              echo "Detected language1: nodejs"
               echo "::set-output name=lang::nodejs"
             elif [ -f requirements.txt ]; then
-              echo "Detected language: python"
+              echo "Detected language2: python"
               echo "::set-output name=lang::python"
             elif [ -f Gemfile ]; then
-              echo "Detected language: ruby"
+              echo "Detected language3: ruby"
               echo "::set-output name=lang::ruby"
             else
               echo "::set-output name=lang::unknown"
