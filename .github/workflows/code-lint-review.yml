@@ -142,27 +142,27 @@ jobs:
 
           if [ -f pylint_report.txt ]; then
             LINT_REPORT=$(cat pylint_report.txt)
-            PR_COMMENT+="🐍 **Python (Pylint)**<br />"
+            PR_COMMENT+="🐍 **Python (Pylint)**<br />\\"
             if [ -s pylint_report.txt ]; then
               PR_COMMENT+="$LINT_REPORT"
             else
-              PR_COMMENT+="✅ No issues found in Python code.<br />"
+              PR_COMMENT+="✅ No issues found in Python code."
             fi
           fi
 
           if [ -f rubocop_report.txt ]; then
             LINT_REPORT=$(cat rubocop_report.txt)
-            PR_COMMENT+="💎 **Ruby (Rubocop)**<br />"
+            PR_COMMENT+="💎 **Ruby (Rubocop)**<br />\\"
             if [ -s rubocop_report.txt ]; then
               PR_COMMENT+="$LINT_REPORT"
             else
-              PR_COMMENT+="✅ No issues found in Ruby code.<br />"
+              PR_COMMENT+="✅ No issues found in Ruby code."
             fi
           fi
 
           # If no lint reports are found
           if [ ! -f eslint_report.txt ] && [ ! -f pylint_report.txt ] && [ ! -f rubocop_report.txt ]; then
-            PR_COMMENT+="✅ No linting errors found in the changed files.<br />"
+            PR_COMMENT+="✅ No linting errors found in the changed files."
           fi
 
           # Post the comment to the PR
