@@ -170,15 +170,10 @@ jobs:
           DIFF=$(cat diff.txt)
 
           # Create a combined user prompt that includes both the commit messages and code diff
-          echo "### Commit Message History:"
-          echo "### Commit Message History:" > combined_prompt.txt
-          echo "$GIT_LOG"
+          echo "### Commit Message History (for context only, not for review):" > combined_prompt.txt
           echo "$GIT_LOG" >> combined_prompt.txt
-          echo ""
           echo "" >> combined_prompt.txt
-          echo "### Code Diff:"
-          echo "### Code Diff:" >> combined_prompt.txt
-          echo "$DIFF"
+          echo "### Code Diff (for review):" >> combined_prompt.txt
           echo "$DIFF" >> combined_prompt.txt
 
           cat combined_prompt.txt
